@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "querylite",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-03-16",
+  "assets": {
+    // Single-page app: unknown paths fall back to index.html.
+    "not_found_handling": "single-page-application",
+    // Only /api/* reaches the Worker; everything else is served as a static asset.
+    "run_worker_first": ["/api/*"]
+  }
+}
