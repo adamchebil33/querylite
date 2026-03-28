@@ -13,14 +13,18 @@
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@duckdb/duckdb-wasm": "^1.33.1-dev37.0",
+    "@duckdb/duckdb-wasm": "1.33.1-dev41.0",
     "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "react-dom": "^19.2.4",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.30.0",
     "@cloudflare/workers-types": "^4.20260317.1",
+    "@duckdb/node-api": "^1.5.1-r.1",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
