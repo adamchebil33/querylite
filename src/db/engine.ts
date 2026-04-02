@@ -1,4 +1,5 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
+import { type RecordBatch, Table } from 'apache-arrow';
 import { type FileKind, quoteIdent, quoteLiteral } from '../lib/files';
 
 export interface ColumnInfo {
@@ -112,13 +113,69 @@ export async function describeTable(tableName: string, source: string): Promise<
   return { name: tableName, columns, rowCount, source };
 }
 
-export async function dropTable(tableName: string): Promise<void> {
+/** Lists every table and view in the database, including ones created by queries. */
+export async function listTables(known: TableInfo[] = []): Promise<TableInfo[]> {
   const { conn } = await getEngine();
-  await conn.query(`DROP TABLE IF EXISTS ${quoteIdent(tableName)}`);
+  const result = await conn.query(
+    `SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name`,
+  );
+  const sources = new Map(known.map((t) => [t.name, t.source]));
+  const order = new Map(known.map((t, i) => [t.name, i]));
+  const names = result.toArray().map((row) => String(row.table_name));
+  const tables = await Promise.all(
+    names.map((name) => describeTable(name, sources.get(name) ?? 'Created by a query')),
+  );
+  // Keep the order tables were added in; new ones go last.
+  return tables.sort(
+    (a, b) => (order.get(a.name) ?? Infinity) - (order.get(b.name) ?? Infinity),
+  );
 }
 
-/** Shortens DuckDB's verbose error text to the part a user can act on. */
+/** Rows kept in memory for display. Larger results are cut off; exports re-run the query. */
+export const MAX_RESULT_ROWS = 100_000;
+
+export interface QueryResult {
+  table: Table;
+  /** True if the query produced more than MAX_RESULT_ROWS rows. */
+  truncated: boolean;
+  elapsedMs: number;
+}
+
+/** Runs SQL and streams the result back, stopping once the display limit is reached. */
+export async function runQuery(sql: string, maxRows = MAX_RESULT_ROWS): Promise<QueryResult> {
+  const { conn } = await getEngine();
+  const started = performance.now();
+  const reader = await conn.send(sql, true);
+  const batches: RecordBatch[] = [];
+  let rows = 0;
+  let truncated = false;
+  for await (const batch of reader) {
+    batches.push(batch);
+    rows += batch.numRows;
+    if (rows > maxRows) {
+      truncated = true;
+      await conn.cancelSent().catch(() => {});
+      break;
+    }
+  }
+  const elapsedMs = performance.now() - started;
+  const full = new Table(reader.schema, batches);
+  return { table: truncated ? full.slice(0, maxRows) : full, truncated, elapsedMs };
+}
+
+export async function dropTable(tableName: string): Promise<void> {
+  const { conn } = await getEngine();
+  // The name may belong to a view if a query created it.
+  await conn
+    .query(`DROP TABLE IF EXISTS ${quoteIdent(tableName)}`)
+    .catch(() => conn.query(`DROP VIEW IF EXISTS ${quoteIdent(tableName)}`));
+}
+
+export function errorMessage(error: unknown): string {
+  return (error instanceof Error ? error.message : String(error)).trim() || 'Unknown error';
+}
+
+/** Shortens DuckDB's verbose error text to its first line. */
 export function friendlyError(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
-  return message.split('\n').find((line) => line.trim().length > 0)?.trim() ?? 'Unknown error';
+  return errorMessage(error).split('\n')[0].trim();
 }

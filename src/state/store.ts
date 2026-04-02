@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import {
   dropTable,
+  errorMessage,
   friendlyError,
   getEngine,
+  listTables,
   loadFile,
+  runQuery,
+  type QueryResult,
   type TableInfo,
 } from '../db/engine';
-import { fileKind, tableNameFor } from '../lib/files';
+import { fileKind, quoteIdent, tableNameFor } from '../lib/files';
 
 export type EngineStatus =
   | { state: 'starting'; progress: number }
@@ -21,23 +25,43 @@ export interface FileLoad {
   error?: string;
 }
 
+export type QueryState =
+  | { status: 'idle' }
+  | { status: 'running'; startedAt: number }
+  | { status: 'done'; result: QueryResult }
+  | { status: 'error'; message: string };
+
 interface AppState {
   engine: EngineStatus;
   tables: TableInfo[];
   /** Files currently loading, plus failed ones until dismissed. */
   loads: FileLoad[];
+  sql: string;
+  query: QueryState;
   startEngine: () => void;
   addFiles: (files: File[]) => Promise<void>;
   removeTable: (name: string) => Promise<void>;
   dismissLoad: (id: number) => void;
+  setSql: (sql: string) => void;
+  /** Runs the given SQL, or the editor's contents if none is given. */
+  run: (sql?: string) => Promise<void>;
+  previewTable: (name: string) => Promise<void>;
 }
 
 let loadId = 0;
+
+export const previewSql = (tableName: string) =>
+  `SELECT * FROM ${/^[a-z_][a-z0-9_]*$/.test(tableName) ? tableName : quoteIdent(tableName)} LIMIT 100;`;
+
+/** Statements that only read never change the list of tables. */
+const isReadOnly = (sql: string) => /^\s*(select|with|from|describe|show|explain|summarize)\b/i.test(sql);
 
 export const useApp = create<AppState>((set, get) => ({
   engine: { state: 'starting', progress: 0 },
   tables: [],
   loads: [],
+  sql: '',
+  query: { status: 'idle' },
 
   startEngine: () => {
     set({ engine: { state: 'starting', progress: 0 } });
@@ -79,6 +103,10 @@ export const useApp = create<AppState>((set, get) => ({
           tables: [...s.tables, table],
           loads: s.loads.filter((l) => l.id !== job.load.id),
         }));
+        // Show the first loaded data right away if the user hasn't written anything yet.
+        if (get().sql.trim() === '' && get().query.status !== 'running') {
+          void get().previewTable(table.name);
+        }
       } catch (error) {
         set((s) => ({
           loads: s.loads.map((l) =>
@@ -95,4 +123,29 @@ export const useApp = create<AppState>((set, get) => ({
   },
 
   dismissLoad: (id) => set((s) => ({ loads: s.loads.filter((l) => l.id !== id) })),
+
+  setSql: (sql) => set({ sql }),
+
+  run: async (sqlOverride) => {
+    const sql = (sqlOverride ?? get().sql).trim();
+    if (!sql || get().query.status === 'running') return;
+    set({ query: { status: 'running', startedAt: Date.now() } });
+    try {
+      const result = await runQuery(sql);
+      set({ query: { status: 'done', result } });
+    } catch (error) {
+      set({ query: { status: 'error', message: errorMessage(error) } });
+    }
+    if (!isReadOnly(sql)) {
+      // The statement may have created, replaced or dropped tables.
+      const tables = await listTables(get().tables).catch(() => null);
+      if (tables) set({ tables });
+    }
+  },
+
+  previewTable: async (name) => {
+    const sql = previewSql(name);
+    set({ sql });
+    await get().run(sql);
+  },
 }));
