@@ -24,7 +24,7 @@ export function formatDecimal(unscaled: bigint, scale: number): string {
 }
 
 /** Arrow stores a decimal as little-endian 32-bit words (two's complement). */
-function decimalToBigInt(words: ArrayLike<number>): bigint {
+export function decimalToBigInt(words: ArrayLike<number>): bigint {
   let value = 0n;
   for (let i = words.length - 1; i >= 0; i--) value = (value << 32n) | BigInt(words[i] >>> 0);
   const bits = BigInt(words.length * 32);
@@ -65,6 +65,37 @@ export function formatCell(value: unknown, type: DataType): string | null {
     return `\\x${Array.from(value.subarray(0, 32), (b) => pad(Number(b.toString(16)))).join('')}`;
   }
   return JSON.stringify(toPlain(value));
+}
+
+/**
+ * A value that sorts correctly with plain comparisons: numbers, bigints,
+ * booleans and strings stay as they are, decimals become bigints, and
+ * anything nested is compared by its display text.
+ */
+export function sortKey(value: unknown, type: DataType): unknown {
+  if (value === null || value === undefined) return null;
+  if (DataType.isDecimal(type)) return decimalToBigInt(value as ArrayLike<number>);
+  if (typeof value === 'object') return formatCell(value, type);
+  return value;
+}
+
+/** A short SQL-style name for a column type, e.g. "bigint" or "decimal(10,2)". */
+export function typeLabel(type: DataType): string {
+  if (DataType.isInt(type)) {
+    const name = { 8: 'tinyint', 16: 'smallint', 32: 'integer', 64: 'bigint' }[type.bitWidth];
+    return `${type.isSigned ? '' : 'u'}${name ?? 'integer'}`;
+  }
+  if (DataType.isFloat(type)) return type.precision === 2 ? 'double' : 'float';
+  if (DataType.isDecimal(type)) return `decimal(${type.precision},${type.scale})`;
+  if (DataType.isUtf8(type) || DataType.isLargeUtf8(type)) return 'text';
+  if (DataType.isBool(type)) return 'boolean';
+  if (DataType.isDate(type)) return 'date';
+  if (DataType.isTimestamp(type)) return 'timestamp';
+  if (DataType.isTime(type)) return 'time';
+  if (DataType.isList(type)) return 'list';
+  if (DataType.isStruct(type)) return 'struct';
+  if (DataType.isBinary(type)) return 'blob';
+  return String(type).toLowerCase();
 }
 
 /** Whether values of this type read best right-aligned. */

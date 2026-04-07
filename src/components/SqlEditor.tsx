@@ -83,6 +83,7 @@ export function SqlEditor({
           language.current.of(sqlSupport(schema)),
           placeholder('Write SQL here, then press Ctrl/Cmd + Enter'),
           theme,
+          EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
             if (update.docChanged) callbacks.current.onChange(update.state.doc.toString());
           }),

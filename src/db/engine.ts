@@ -163,6 +163,12 @@ export async function runQuery(sql: string, maxRows = MAX_RESULT_ROWS): Promise<
   return { table: truncated ? full.slice(0, maxRows) : full, truncated, elapsedMs };
 }
 
+/** Asks DuckDB to stop the query that is currently running. */
+export async function cancelQuery(): Promise<void> {
+  const { conn } = await getEngine();
+  await conn.cancelSent().catch(() => {});
+}
+
 export async function dropTable(tableName: string): Promise<void> {
   const { conn } = await getEngine();
   // The name may belong to a view if a query created it.

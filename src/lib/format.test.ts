@@ -1,6 +1,23 @@
-import { Bool, DateDay, Decimal, Float64, Int64, TimestampMicrosecond, Utf8 } from 'apache-arrow';
+import {
+  Bool,
+  DateDay,
+  Decimal,
+  Float64,
+  Int32,
+  Int64,
+  TimestampMicrosecond,
+  Utf8,
+} from 'apache-arrow';
 import { describe, expect, it } from 'vitest';
-import { formatCell, formatCount, formatDecimal, formatDuration, isNumeric } from './format';
+import {
+  formatCell,
+  formatCount,
+  formatDecimal,
+  formatDuration,
+  isNumeric,
+  sortKey,
+  typeLabel,
+} from './format';
 
 describe('formatDecimal', () => {
   it('restores the decimal point', () => {
@@ -35,6 +52,23 @@ describe('formatCell', () => {
     expect(formatCell(ms, new DateDay())).toBe('2025-01-03');
     expect(formatCell(ms, new TimestampMicrosecond())).toBe('2025-01-03 04:05:06');
     expect(formatCell(ms + 7, new TimestampMicrosecond())).toBe('2025-01-03 04:05:06.007');
+  });
+});
+
+describe('sortKey and typeLabel', () => {
+  it('makes decimals comparable', () => {
+    expect(sortKey(new Uint32Array([150, 0, 0, 0]), new Decimal(2, 10))).toBe(150n);
+    expect(sortKey(null, new Decimal(2, 10))).toBeNull();
+    expect(sortKey('b', new Utf8())).toBe('b');
+  });
+
+  it('names types the SQL way', () => {
+    expect(typeLabel(new Int32())).toBe('integer');
+    expect(typeLabel(new Int64())).toBe('bigint');
+    expect(typeLabel(new Float64())).toBe('double');
+    expect(typeLabel(new Decimal(2, 10))).toBe('decimal(10,2)');
+    expect(typeLabel(new Utf8())).toBe('text');
+    expect(typeLabel(new TimestampMicrosecond())).toBe('timestamp');
   });
 });
 

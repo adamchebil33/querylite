@@ -39,6 +39,7 @@ function Workspace() {
   const run = useApp((s) => s.run);
   const tables = useApp((s) => s.tables);
   const running = useApp((s) => s.query.status === 'running');
+  const cancel = useApp((s) => s.cancel);
 
   const schema = useMemo<SqlSchema>(
     () => Object.fromEntries(tables.map((t) => [t.name, t.columns.map((c) => c.name)])),
@@ -52,17 +53,27 @@ function Workspace() {
         <SqlEditor value={sql} onChange={setSql} onRun={onRun} schema={schema} />
       </div>
       <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-3 py-2 dark:border-slate-800">
-        <button
-          type="button"
-          disabled={running || sql.trim() === ''}
-          onClick={onRun}
-          className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <svg viewBox="0 0 12 12" aria-hidden className="h-3 w-3 fill-current">
-            <path d="M3 1.500l7 4.500-7 4.500z" />
-          </svg>
-          Run
-        </button>
+        {running ? (
+          <button
+            type="button"
+            onClick={cancel}
+            className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
+          >
+            Cancel
+          </button>
+        ) : (
+          <button
+            type="button"
+            disabled={sql.trim() === ''}
+            onClick={onRun}
+            className="flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg viewBox="0 0 12 12" aria-hidden className="h-3 w-3 fill-current">
+              <path d="M3 1.500l7 4.500-7 4.500z" />
+            </svg>
+            Run
+          </button>
+        )}
         <kbd className="text-xs text-slate-400">Ctrl/Cmd + Enter</kbd>
         <div className="ml-auto">
           <ResultSummary />

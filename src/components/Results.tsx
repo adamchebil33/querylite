@@ -1,53 +1,10 @@
-import { MAX_RESULT_ROWS, type QueryResult } from '../db/engine';
-import { formatCell, formatCount, formatDuration, isNumeric } from '../lib/format';
+import { useMemo } from 'react';
+import { MAX_RESULT_ROWS } from '../db/engine';
+import { parseSqlError } from '../lib/errors';
+import { formatCount, formatDuration } from '../lib/format';
 import { useApp } from '../state/store';
+import { ResultTable } from './ResultTable';
 import { Elapsed } from './Sidebar';
-
-/** Rows drawn until the virtualized table lands. */
-const VISIBLE_ROWS = 200;
-
-function ResultTable({ result }: { result: QueryResult }) {
-  const { table } = result;
-  const fields = table.schema.fields;
-  const columns = fields.map((_, i) => table.getChildAt(i)!);
-  const shown = Math.min(table.numRows, VISIBLE_ROWS);
-
-  return (
-    <div className="h-full overflow-auto">
-      <table data-testid="result-table" className="min-w-full border-collapse text-sm">
-        <thead className="sticky top-0 bg-slate-100 dark:bg-slate-800">
-          <tr>
-            {fields.map((field, c) => (
-              <th
-                key={c}
-                className={`border-b border-slate-200 px-3 py-1.5 font-semibold whitespace-nowrap dark:border-slate-700 ${isNumeric(field.type) ? 'text-right' : 'text-left'}`}
-              >
-                {field.name}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: shown }, (_, r) => (
-            <tr key={r} className="odd:bg-white even:bg-slate-50 dark:odd:bg-slate-900 dark:even:bg-slate-900/50">
-              {fields.map((field, c) => {
-                const text = formatCell(columns[c].get(r), field.type);
-                return (
-                  <td
-                    key={c}
-                    className={`max-w-md truncate border-b border-slate-100 px-3 py-1 font-mono text-[13px] whitespace-nowrap dark:border-slate-800 ${isNumeric(field.type) ? 'text-right tabular-nums' : ''}`}
-                  >
-                    {text === null ? <span className="text-slate-400 italic">NULL</span> : text}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 export function ResultSummary() {
   const query = useApp((s) => s.query);
@@ -60,38 +17,74 @@ export function ResultSummary() {
   }
   if (query.status !== 'done') return null;
   const { table, truncated, elapsedMs } = query.result;
+  const limit = MAX_RESULT_ROWS.toLocaleString('en-US');
   return (
     <span data-testid="result-summary" className="text-sm text-slate-500">
-      {truncated
-        ? `First ${MAX_RESULT_ROWS.toLocaleString('en-US')} rows`
-        : formatCount(table.numRows, 'row')}{' '}
+      {truncated ? (
+        <span title={`Only the first ${limit} rows are shown. Add a LIMIT or aggregate to narrow the result.`}>
+          First {limit} rows
+        </span>
+      ) : (
+        formatCount(table.numRows, 'row')
+      )}{' '}
       · {formatDuration(elapsedMs)}
+      {query.scannedRows > 0 && ` over ${formatCount(query.scannedRows, 'row')}`}
+      {query.sort && query.result.truncated && !query.sortedByDatabase && ' · sorted within shown rows'}
     </span>
+  );
+}
+
+function QueryError({ message }: { message: string }) {
+  const tables = useApp((s) => s.tables);
+  const error = useMemo(
+    () =>
+      parseSqlError(
+        message,
+        tables.map((t) => t.name),
+      ),
+    [message, tables],
+  );
+  return (
+    <div className="p-4">
+      <div
+        role="alert"
+        data-testid="query-error"
+        className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-900 dark:bg-red-950/40"
+      >
+        <p className="font-semibold text-red-800 dark:text-red-200">{error.title}</p>
+        <p className="mt-1 whitespace-pre-wrap text-red-800 dark:text-red-200">{error.message}</p>
+        {error.context && (
+          <pre className="mt-3 overflow-x-auto rounded-md bg-white/70 p-2 font-mono text-[13px] text-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
+            {error.context}
+          </pre>
+        )}
+        {error.hint && <p className="mt-3 text-slate-600 dark:text-slate-400">{error.hint}</p>}
+      </div>
+    </div>
   );
 }
 
 export function Results() {
   const query = useApp((s) => s.query);
+  const sortBy = useApp((s) => s.sortBy);
 
-  if (query.status === 'error') {
-    return (
-      <div className="p-4">
-        <pre
-          role="alert"
-          data-testid="query-error"
-          className="overflow-auto rounded-lg border border-red-300 bg-red-50 p-3 text-sm whitespace-pre-wrap text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200"
-        >
-          {query.message}
-        </pre>
-      </div>
-    );
-  }
-  if (query.status === 'done') {
-    if (query.result.table.schema.fields.length === 0 || query.result.table.numRows === 0) {
-      return <p className="p-4 text-sm text-slate-500">Query ran successfully and returned no rows.</p>;
-    }
-    return <ResultTable result={query.result} />;
-  }
+  if (query.status === 'error') return <QueryError message={query.message} />;
   if (query.status === 'running') return null;
-  return <p className="p-4 text-sm text-slate-500">Results will appear here.</p>;
+  if (query.status === 'idle') {
+    return <p className="p-4 text-sm text-slate-500">Results will appear here.</p>;
+  }
+  const { table } = query.result;
+  if (table.schema.fields.length === 0 || table.numRows === 0) {
+    return <p className="p-4 text-sm text-slate-500">Query ran successfully and returned no rows.</p>;
+  }
+  return (
+    <ResultTable
+      // A new result starts scrolled to the top with fresh column widths.
+      key={query.result.elapsedMs}
+      result={query.result}
+      sort={query.sort}
+      sortedByDatabase={query.sortedByDatabase}
+      onSort={(column) => void sortBy(column)}
+    />
+  );
 }
