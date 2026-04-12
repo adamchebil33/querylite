@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "build:samples": "node scripts/build-samples.mjs",
     "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {

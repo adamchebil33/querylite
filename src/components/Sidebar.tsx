@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { TableInfo } from '../db/engine';
 import { formatBytes } from '../lib/files';
 import { formatCount } from '../lib/format';
+import { SAMPLES } from '../samples';
 import { useApp, type FileLoad } from '../state/store';
 import { FilePickerButton } from './DropZone';
 
@@ -51,9 +52,14 @@ function LoadRow({ load }: { load: FileLoad }) {
     <li className="flex items-center gap-2 rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-800">
       <Spinner />
       <span className="min-w-0 flex-1 truncate" title={load.fileName}>
-        {load.fileName} ({formatBytes(load.size)})
+        {load.fileName}
+        {load.size > 0 && ` (${formatBytes(load.size)})`}
       </span>
-      <Elapsed since={load.startedAt} />
+      {load.progress !== undefined && load.progress < 1 ? (
+        <span className="tabular-nums">{Math.round(load.progress * 100)}%</span>
+      ) : (
+        <Elapsed since={load.startedAt} />
+      )}
     </li>
   );
 }
@@ -126,6 +132,7 @@ function TableCard({ table }: { table: TableInfo }) {
 export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
   const tables = useApp((s) => s.tables);
   const loads = useApp((s) => s.loads);
+  const loadSample = useApp((s) => s.loadSample);
 
   return (
     <aside className="flex w-72 shrink-0 flex-col border-r border-slate-200 dark:border-slate-800">
@@ -151,6 +158,37 @@ export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
           </li>
         )}
       </ul>
+      <div className="border-t border-slate-200 px-3 py-2 dark:border-slate-800">
+        <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
+          Sample datasets
+        </h2>
+        <ul className="mt-1.5 flex flex-col gap-1">
+          {SAMPLES.map((sample) => {
+            const loaded = sample.tables.every((t) =>
+              tables.some((x) => x.name === t.name && x.source === sample.name),
+            );
+            return (
+              <li key={sample.id} className="flex items-center justify-between gap-2 text-sm">
+                <span className="truncate" title={sample.description}>
+                  {sample.name}
+                </span>
+                {loaded ? (
+                  <span className="text-xs text-slate-400">Loaded</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="rounded px-1.5 py-0.5 text-xs text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-950"
+                    aria-label={`Load sample ${sample.name}`}
+                    onClick={() => void loadSample(sample.id)}
+                  >
+                    Load
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </aside>
   );
 }

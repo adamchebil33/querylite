@@ -101,6 +101,51 @@ export async function loadFile(file: File, kind: FileKind, tableName: string): P
   return describeTable(tableName, file.name);
 }
 
+/**
+ * Loads a Parquet file served by this site (a sample dataset) into a table,
+ * reporting download progress as a fraction between 0 and 1.
+ */
+export async function loadRemoteParquet(
+  url: string,
+  tableName: string,
+  source: string,
+  onProgress?: (fraction: number) => void,
+): Promise<TableInfo> {
+  const response = await fetch(url);
+  if (!response.ok || !response.body) {
+    throw new Error(`Could not download ${url} (HTTP ${response.status})`);
+  }
+  const total = Number(response.headers.get('content-length')) || 0;
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  const reader = response.body.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    if (total > 0) onProgress?.(Math.min(1, received / total));
+  }
+  const bytes = new Uint8Array(received);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  const { db, conn } = await getEngine();
+  const registeredName = `sample_${++fileCounter}.parquet`;
+  await db.registerFileBuffer(registeredName, bytes);
+  try {
+    await conn.query(
+      `CREATE OR REPLACE TABLE ${quoteIdent(tableName)} AS SELECT * FROM read_parquet(${quoteLiteral(registeredName)})`,
+    );
+  } finally {
+    await db.dropFile(registeredName).catch(() => {});
+  }
+  return describeTable(tableName, source);
+}
+
 export async function describeTable(tableName: string, source: string): Promise<TableInfo> {
   const { conn } = await getEngine();
   const described = await conn.query(`DESCRIBE ${quoteIdent(tableName)}`);

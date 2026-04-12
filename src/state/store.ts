@@ -7,12 +7,14 @@ import {
   getEngine,
   listTables,
   loadFile,
+  loadRemoteParquet,
   runQuery,
   type QueryResult,
   type TableInfo,
 } from '../db/engine';
 import { fileKind, quoteIdent, tableNameFor } from '../lib/files';
 import { tablesMentioned } from '../lib/sql';
+import { sampleById } from '../samples';
 import { nextSort, sortedSql, type SortSpec } from '../lib/sort';
 
 export type EngineStatus =
@@ -25,6 +27,8 @@ export interface FileLoad {
   fileName: string;
   size: number;
   startedAt: number;
+  /** Download progress between 0 and 1, when it can be measured. */
+  progress?: number;
   error?: string;
 }
 
@@ -53,6 +57,8 @@ interface AppState {
   query: QueryState;
   startEngine: () => void;
   addFiles: (files: File[]) => Promise<void>;
+  /** Loads a built-in sample dataset and runs its first example question. */
+  loadSample: (id: string) => Promise<void>;
   removeTable: (name: string) => Promise<void>;
   dismissLoad: (id: number) => void;
   setSql: (sql: string) => void;
@@ -131,6 +137,53 @@ export const useApp = create<AppState>((set, get) => ({
           ),
         }));
       }
+    }
+  },
+
+  loadSample: async (id) => {
+    const sample = sampleById(id);
+    if (!sample) return;
+    const patch = (loadIdToPatch: number, change: Partial<FileLoad>) =>
+      set((s) => ({
+        loads: s.loads.map((l) => (l.id === loadIdToPatch ? { ...l, ...change } : l)),
+      }));
+
+    let failed = false;
+    for (const table of sample.tables) {
+      const existing = get().tables.find((t) => t.name === table.name);
+      if (existing?.source === sample.name) continue; // already loaded
+      const load: FileLoad = {
+        id: ++loadId,
+        fileName: `${sample.name}: ${table.name}`,
+        size: 0,
+        startedAt: Date.now(),
+        progress: 0,
+      };
+      set((s) => ({ loads: [...s.loads, load] }));
+      if (existing) {
+        patch(load.id, {
+          error: `A table named "${table.name}" already exists. Remove it to load this sample.`,
+        });
+        failed = true;
+        continue;
+      }
+      try {
+        const info = await loadRemoteParquet(table.file, table.name, sample.name, (progress) =>
+          patch(load.id, { progress }),
+        );
+        set((s) => ({
+          tables: [...s.tables, info],
+          loads: s.loads.filter((l) => l.id !== load.id),
+        }));
+      } catch (error) {
+        patch(load.id, { error: friendlyError(error) });
+        failed = true;
+      }
+    }
+    if (!failed && get().query.status !== 'running') {
+      const first = sample.questions[0];
+      set({ sql: first.sql });
+      await get().run(first.sql);
     }
   },
 

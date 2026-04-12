@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { DropZone } from './components/DropZone';
+import { ExampleChips } from './components/ExampleChips';
 import { Results, ResultSummary } from './components/Results';
 import { Sidebar } from './components/Sidebar';
 import { SqlEditor, type SqlSchema } from './components/SqlEditor';
@@ -33,7 +34,7 @@ function EngineBadge() {
   );
 }
 
-function Workspace() {
+function Workspace({ onFiles }: { onFiles: (files: File[]) => void }) {
   const sql = useApp((s) => s.sql);
   const setSql = useApp((s) => s.setSql);
   const run = useApp((s) => s.run);
@@ -79,8 +80,9 @@ function Workspace() {
           <ResultSummary />
         </div>
       </div>
+      <ExampleChips />
       <div className="min-h-0 flex-1">
-        <Results />
+        <Results onFiles={onFiles} />
       </div>
     </section>
   );
@@ -109,7 +111,7 @@ export function App() {
         </header>
         <div className="flex min-h-0 flex-1">
           <Sidebar onFiles={onFiles} />
-          <Workspace />
+          <Workspace onFiles={onFiles} />
         </div>
       </div>
     </DropZone>

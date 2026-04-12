@@ -5,6 +5,7 @@ import { formatCount, formatDuration } from '../lib/format';
 import { useApp } from '../state/store';
 import { ResultTable } from './ResultTable';
 import { Elapsed } from './Sidebar';
+import { Welcome } from './Welcome';
 
 export function ResultSummary() {
   const query = useApp((s) => s.query);
@@ -64,14 +65,19 @@ function QueryError({ message }: { message: string }) {
   );
 }
 
-export function Results() {
+export function Results({ onFiles }: { onFiles: (files: File[]) => void }) {
   const query = useApp((s) => s.query);
+  const isEmpty = useApp((s) => s.tables.length === 0 && s.loads.length === 0);
   const sortBy = useApp((s) => s.sortBy);
 
   if (query.status === 'error') return <QueryError message={query.message} />;
   if (query.status === 'running') return null;
   if (query.status === 'idle') {
-    return <p className="p-4 text-sm text-slate-500">Results will appear here.</p>;
+    return isEmpty ? (
+      <Welcome onFiles={onFiles} />
+    ) : (
+      <p className="p-4 text-sm text-slate-500">Results will appear here.</p>
+    );
   }
   const { table } = query.result;
   if (table.schema.fields.length === 0 || table.numRows === 0) {
