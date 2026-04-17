@@ -111,7 +111,7 @@ ORDER BY year;`,
       {
         label: 'Do richer countries emit more per person?',
         sql: `SELECT round(gdp / population) AS gdp_per_person,
-       co2_per_capita,
+       round(co2_per_capita, 2) AS co2_per_person,
        country
 FROM emissions
 WHERE year = 2022

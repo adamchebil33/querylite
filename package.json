@@ -19,6 +19,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.41.0",
     "@duckdb/duckdb-wasm": "1.33.1-dev41.0",
+    "@observablehq/plot": "^0.6.17",
     "@tanstack/react-virtual": "^3.13.23",
     "apache-arrow": "17.0.0",
     "codemirror": "^6.0.2",

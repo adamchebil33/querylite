@@ -1,6 +1,7 @@
 import * as duckdb from '@duckdb/duckdb-wasm';
 import { type RecordBatch, Table } from 'apache-arrow';
 import { type FileKind, quoteIdent, quoteLiteral } from '../lib/files';
+import { withoutTrailingSemicolon } from '../lib/sql';
 
 export interface ColumnInfo {
   name: string;
@@ -206,6 +207,25 @@ export async function runQuery(sql: string, maxRows = MAX_RESULT_ROWS): Promise<
   const elapsedMs = performance.now() - started;
   const full = new Table(reader.schema, batches);
   return { table: truncated ? full.slice(0, maxRows) : full, truncated, elapsedMs };
+}
+
+export type ExportFormat = 'csv' | 'parquet';
+
+/**
+ * Re-runs a query and writes its full result (not just the rows on screen)
+ * to a file inside the database worker, then hands back the bytes.
+ */
+export async function exportQuery(sql: string, format: ExportFormat): Promise<Uint8Array> {
+  const { db, conn } = await getEngine();
+  const fileName = `export_${++fileCounter}.${format}`;
+  const inner = withoutTrailingSemicolon(sql);
+  const options = format === 'csv' ? 'FORMAT csv, HEADER' : 'FORMAT parquet';
+  try {
+    await conn.query(`COPY (\n${inner}\n) TO ${quoteLiteral(fileName)} (${options})`);
+    return await db.copyFileToBuffer(fileName);
+  } finally {
+    await db.dropFile(fileName).catch(() => {});
+  }
 }
 
 /** Asks DuckDB to stop the query that is currently running. */

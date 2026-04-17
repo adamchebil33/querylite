@@ -1,8 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MAX_RESULT_ROWS } from '../db/engine';
 import { parseSqlError } from '../lib/errors';
 import { formatCount, formatDuration } from '../lib/format';
 import { useApp } from '../state/store';
+import { ChartPanel, defaultChart } from './ChartPanel';
+import { ExportButtons } from './ExportButtons';
 import { ResultTable } from './ResultTable';
 import { Elapsed } from './Sidebar';
 import { Welcome } from './Welcome';
@@ -16,6 +18,17 @@ export function ResultSummary() {
       </span>
     );
   }
+  if (query.status !== 'done') return null;
+  return (
+    <span className="flex items-center gap-4">
+      <ExportButtons sql={query.sql} />
+      <ResultSummaryText />
+    </span>
+  );
+}
+
+function ResultSummaryText() {
+  const query = useApp((s) => s.query);
   if (query.status !== 'done') return null;
   const { table, truncated, elapsedMs } = query.result;
   const limit = MAX_RESULT_ROWS.toLocaleString('en-US');
@@ -84,13 +97,50 @@ export function Results({ onFiles }: { onFiles: (files: File[]) => void }) {
     return <p className="p-4 text-sm text-slate-500">Query ran successfully and returned no rows.</p>;
   }
   return (
-    <ResultTable
-      // A new result starts scrolled to the top with fresh column widths.
+    // A new result starts scrolled to the top with fresh column widths and a fresh chart.
+    <ResultView
       key={query.result.elapsedMs}
       result={query.result}
       sort={query.sort}
       sortedByDatabase={query.sortedByDatabase}
       onSort={(column) => void sortBy(column)}
     />
+  );
+}
+
+function ResultView(props: Parameters<typeof ResultTable>[0]) {
+  const { table } = props.result;
+  const chart = useMemo(() => defaultChart(table), [table]);
+  const [showChart, setShowChart] = useState(true);
+
+  return (
+    <div className="flex h-full flex-col lg:flex-row">
+      <div className="relative min-h-0 min-w-0 flex-1">
+        <ResultTable {...props} />
+        {chart && !showChart && (
+          <button
+            type="button"
+            onClick={() => setShowChart(true)}
+            className="absolute top-2 right-4 z-30 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium shadow-sm hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+          >
+            Show chart
+          </button>
+        )}
+      </div>
+      {chart && showChart && (
+        <div className="relative h-1/2 min-h-0 shrink-0 border-t border-slate-200 lg:h-auto lg:w-[46%] lg:border-t-0 lg:border-l dark:border-slate-800">
+          <ChartPanel table={table} initial={chart} />
+          <button
+            type="button"
+            aria-label="Hide chart"
+            title="Hide chart"
+            onClick={() => setShowChart(false)}
+            className="absolute top-2 right-2 rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

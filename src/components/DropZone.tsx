@@ -71,10 +71,12 @@ export function FilePickerButton({
   onFiles,
   children,
   className,
+  testId = 'file-input',
 }: {
   onFiles: (files: File[]) => void;
   children: ReactNode;
   className?: string;
+  testId?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);
   return (
@@ -87,7 +89,7 @@ export function FilePickerButton({
         type="file"
         multiple
         hidden
-        data-testid="file-input"
+        data-testid={testId}
         accept={ACCEPTED_EXTENSIONS.join(',')}
         onChange={(event) => {
           const files = Array.from(event.target.files ?? []);

@@ -79,6 +79,15 @@ export function sortKey(value: unknown, type: DataType): unknown {
   return value;
 }
 
+/** A plain number for charting; NaN if the value isn't numeric. */
+export function toNumber(value: unknown, type: DataType): number {
+  if (value === null || value === undefined) return NaN;
+  if (DataType.isDecimal(type)) {
+    return Number(formatDecimal(decimalToBigInt(value as ArrayLike<number>), type.scale));
+  }
+  return typeof value === 'number' || typeof value === 'bigint' ? Number(value) : NaN;
+}
+
 /** A short SQL-style name for a column type, e.g. "bigint" or "decimal(10,2)". */
 export function typeLabel(type: DataType): string {
   if (DataType.isInt(type)) {

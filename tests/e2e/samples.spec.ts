@@ -36,3 +36,25 @@ test('every example question of every sample runs', async ({ page }) => {
     await expect(page.getByTestId('result-table').getByRole('cell').first()).toBeVisible();
   }
 });
+
+test('a chart appears next to the table and its type can be switched', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('sample-emissions').click();
+  await expect(page.getByTestId('result-table')).toBeVisible({ timeout: 45_000 });
+  const chart = page.getByTestId('chart');
+  // Biggest emitters: one bar per country.
+  await expect(chart.locator('svg [aria-label="bar"] path, svg [aria-label="bar"] rect')).toHaveCount(10);
+
+  await page.getByRole('button', { name: 'World emissions over time' }).click();
+  await expect(chart.locator('svg [aria-label="line"] path')).toHaveCount(1);
+  await page.getByRole('group', { name: 'Chart type' }).getByRole('button', { name: 'Bar' }).click();
+  await expect(chart.locator('svg [aria-label="bar"]')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Coal vs oil vs gas since 1950' }).click();
+  await expect(chart.locator('svg [aria-label="line"] path')).toHaveCount(3);
+
+  await page.getByRole('button', { name: 'Hide chart' }).click();
+  await expect(chart).toHaveCount(0);
+  await page.getByRole('button', { name: 'Show chart' }).click();
+  await expect(chart).toBeVisible();
+});
