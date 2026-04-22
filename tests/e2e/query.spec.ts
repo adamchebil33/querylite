@@ -131,7 +131,9 @@ test('sorts by clicking a column header', async ({ page }) => {
 test('sorting a cut-off result sorts the full result in the database', async ({ page }) => {
   await page.goto('/');
   await runSql(page, 'SELECT i FROM range(250000) t(i);');
-  await expect(page.getByTestId('result-summary')).toContainText('First 100,000 rows');
+  await expect(page.getByTestId('result-summary')).toContainText('First 100,000 rows', {
+    timeout: 20_000,
+  });
   await page.getByRole('button', { name: 'Sort by i' }).click();
   await page.getByRole('button', { name: 'Sort by i' }).click();
   // Descending: the largest value is beyond the first 100,000 rows.

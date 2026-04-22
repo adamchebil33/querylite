@@ -5,6 +5,7 @@ import { formatCount } from '../lib/format';
 import { SAMPLES } from '../samples';
 import { useApp, type FileLoad } from '../state/store';
 import { FilePickerButton } from './DropZone';
+import { QueriesPanel } from './QueriesPanel';
 
 function Spinner() {
   return (
@@ -130,14 +131,26 @@ function TableCard({ table }: { table: TableInfo }) {
 }
 
 export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
-  const tables = useApp((s) => s.tables);
-  const loads = useApp((s) => s.loads);
-  const loadSample = useApp((s) => s.loadSample);
+  const [tab, setTab] = useState<'tables' | 'queries'>('tables');
+
+  const tabClass = (active: boolean) =>
+    `px-1 pb-1 text-xs font-semibold tracking-wide uppercase border-b-2 ${
+      active
+        ? 'border-indigo-500 text-slate-900 dark:text-slate-100'
+        : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+    }`;
 
   return (
     <aside className="flex w-72 shrink-0 flex-col border-r border-slate-200 dark:border-slate-800">
       <div className="flex items-center justify-between px-3 py-2">
-        <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Tables</h2>
+        <div role="tablist" className="flex gap-3">
+          <button type="button" role="tab" aria-selected={tab === 'tables'} className={tabClass(tab === 'tables')} onClick={() => setTab('tables')}>
+            Tables
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'queries'} className={tabClass(tab === 'queries')} onClick={() => setTab('queries')}>
+            Queries
+          </button>
+        </div>
         <FilePickerButton
           onFiles={onFiles}
           className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-100 dark:border-slate-700 dark:hover:bg-slate-800"
@@ -145,6 +158,18 @@ export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
           + Add files
         </FilePickerButton>
       </div>
+      {tab === 'queries' ? <QueriesPanel /> : <TablesTab />}
+    </aside>
+  );
+}
+
+function TablesTab() {
+  const tables = useApp((s) => s.tables);
+  const loads = useApp((s) => s.loads);
+  const loadSample = useApp((s) => s.loadSample);
+
+  return (
+    <>
       <ul className="flex flex-1 flex-col gap-2 overflow-y-auto px-3 pb-3">
         {tables.map((table) => (
           <TableCard key={table.name} table={table} />
@@ -189,6 +214,6 @@ export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
           })}
         </ul>
       </div>
-    </aside>
+    </>
   );
 }

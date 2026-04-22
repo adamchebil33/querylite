@@ -1,0 +1,10 @@
+# Security headers for every page and asset.
+#
+# The Content-Security-Policy makes the privacy promise enforceable: the
+# browser refuses any connection except to this site, the jsDelivr CDN (the
+# DuckDB engine) and DuckDB's extension host (file-format readers). Even a bug
+# or a compromised dependency could not send data anywhere else.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; worker-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net https://extensions.duckdb.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer

@@ -14,7 +14,9 @@ import {
 } from '../db/engine';
 import { fileKind, quoteIdent, tableNameFor } from '../lib/files';
 import { tablesMentioned } from '../lib/sql';
-import { sampleById } from '../samples';
+import { SAMPLES, sampleById } from '../samples';
+import { decodeShare } from '../lib/share';
+import { useLibrary } from './library';
 import { nextSort, sortedSql, type SortSpec } from '../lib/sort';
 
 export type EngineStatus =
@@ -58,7 +60,9 @@ interface AppState {
   startEngine: () => void;
   addFiles: (files: File[]) => Promise<void>;
   /** Loads a built-in sample dataset and runs its first example question. */
-  loadSample: (id: string) => Promise<void>;
+  loadSample: (id: string, options?: { runFirstQuestion?: boolean }) => Promise<boolean>;
+  /** Opens a share link: loads the samples it names, then shows and runs its SQL. */
+  openSharedLink: (hash: string) => Promise<void>;
   removeTable: (name: string) => Promise<void>;
   dismissLoad: (id: number) => void;
   setSql: (sql: string) => void;
@@ -140,9 +144,9 @@ export const useApp = create<AppState>((set, get) => ({
     }
   },
 
-  loadSample: async (id) => {
+  loadSample: async (id, { runFirstQuestion = true } = {}) => {
     const sample = sampleById(id);
-    if (!sample) return;
+    if (!sample) return false;
     const patch = (loadIdToPatch: number, change: Partial<FileLoad>) =>
       set((s) => ({
         loads: s.loads.map((l) => (l.id === loadIdToPatch ? { ...l, ...change } : l)),
@@ -180,11 +184,28 @@ export const useApp = create<AppState>((set, get) => ({
         failed = true;
       }
     }
-    if (!failed && get().query.status !== 'running') {
+    if (!failed && runFirstQuestion && get().query.status !== 'running') {
       const first = sample.questions[0];
       set({ sql: first.sql });
       await get().run(first.sql);
     }
+    return !failed;
+  },
+
+  openSharedLink: async (hash) => {
+    const shared = decodeShare(
+      hash,
+      SAMPLES.map((s) => s.id),
+    );
+    if (!shared) return;
+    set({ sql: shared.sql });
+    let ready = true;
+    for (const id of shared.samples) {
+      ready = (await get().loadSample(id, { runFirstQuestion: false })) && ready;
+    }
+    // Only run automatically against sample data. A link without a sample
+    // refers to someone's own files, so the SQL is shown and left for the visitor to run.
+    if (ready && shared.samples.length > 0 && get().sql === shared.sql) await get().run(shared.sql);
   },
 
   removeTable: async (name) => {
@@ -216,7 +237,9 @@ export const useApp = create<AppState>((set, get) => ({
       set({
         query: { status: 'done', result, sql, sort: null, sortedByDatabase: false, scannedRows },
       });
+      useLibrary.getState().record(sql, true);
     } catch (error) {
+      if (!cancelled) useLibrary.getState().record(sql, false);
       set({
         query: cancelled ? { status: 'idle' } : { status: 'error', message: errorMessage(error) },
       });

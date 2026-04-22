@@ -2,6 +2,7 @@ import type { CompletionContext, CompletionResult } from '@codemirror/autocomple
 import { PostgreSQL, sql } from '@codemirror/lang-sql';
 import { Compartment, EditorState, Prec } from '@codemirror/state';
 import { EditorView, keymap, placeholder } from '@codemirror/view';
+import { oneDark } from '@codemirror/theme-one-dark';
 import { basicSetup } from 'codemirror';
 import { useEffect, useRef } from 'react';
 
@@ -50,15 +51,18 @@ export function SqlEditor({
   onChange,
   onRun,
   schema,
+  dark = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   onRun: () => void;
   schema: SqlSchema;
+  dark?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const language = useRef(new Compartment());
+  const colors = useRef(new Compartment());
   const callbacks = useRef({ onChange, onRun });
   callbacks.current = { onChange, onRun };
 
@@ -81,6 +85,7 @@ export function SqlEditor({
           ),
           basicSetup,
           language.current.of(sqlSupport(schema)),
+          colors.current.of(dark ? oneDark : []),
           placeholder('Write SQL here, then press Ctrl/Cmd + Enter'),
           theme,
           EditorView.lineWrapping,
@@ -109,6 +114,10 @@ export function SqlEditor({
   useEffect(() => {
     view.current?.dispatch({ effects: language.current.reconfigure(sqlSupport(schema)) });
   }, [schema]);
+
+  useEffect(() => {
+    view.current?.dispatch({ effects: colors.current.reconfigure(dark ? oneDark : []) });
+  }, [dark]);
 
   return <div ref={host} data-testid="sql-editor" className="h-full overflow-hidden" />;
 }

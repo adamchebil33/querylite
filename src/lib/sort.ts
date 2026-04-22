@@ -1,3 +1,5 @@
+import { withoutTrailingSemicolon } from './sql';
+
 export type SortDirection = 'asc' | 'desc';
 
 export interface SortSpec {
@@ -42,6 +44,6 @@ export function sortOrder(keys: ArrayLike<unknown>, direction: SortDirection): I
 
 /** Wraps a query so the database sorts its full result by one column. */
 export function sortedSql(sql: string, quotedColumn: string, direction: SortDirection): string {
-  const inner = sql.trim().replace(/;+\s*$/, '');
+  const inner = withoutTrailingSemicolon(sql);
   return `SELECT * FROM (\n${inner}\n) ORDER BY ${quotedColumn} ${direction.toUpperCase()} NULLS LAST`;
 }

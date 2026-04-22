@@ -8,6 +8,19 @@ body,
   height: 100%;
 }
 
+/* Match the page background before the app starts, to avoid a flash. */
+html {
+  background: #f8fafc;
+}
+@media (prefers-color-scheme: dark) {
+  html {
+    background: #020617;
+  }
+}
+html.dark {
+  background: #020617;
+}
+
 /*
  * Chart colors. The eight series colors are a colorblind-checked palette,
  * used in this fixed order; the dark values are the same hues re-stepped
