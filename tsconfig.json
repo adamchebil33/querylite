@@ -15,5 +15,5 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client", "@cloudflare/workers-types", "node"]
   },
-  "include": ["src", "worker", "tests", "*.config.ts"]
+  "include": ["src", "worker", "shared", "tests", "*.config.ts"]
 }

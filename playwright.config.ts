@@ -8,6 +8,9 @@ const port = preview ? 4173 : 5173;
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 60_000,
+  // Every test starts a fresh browser that downloads the database engine from
+  // the CDN first, so allow for a slow network before the first result shows.
+  expect: { timeout: 15_000 },
   // The dev server can reload once while it pre-bundles dependencies on a cold start.
   retries: 1,
   use: { baseURL: `http://localhost:${port}` },

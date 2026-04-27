@@ -50,6 +50,8 @@ function ResultSummaryText() {
 
 function QueryError({ message }: { message: string }) {
   const tables = useApp((s) => s.tables);
+  const fixError = useApp((s) => s.fixError);
+  const fixing = useApp((s) => s.ai.busy === 'fix');
   const error = useMemo(
     () =>
       parseSqlError(
@@ -73,6 +75,15 @@ function QueryError({ message }: { message: string }) {
           </pre>
         )}
         {error.hint && <p className="mt-3 text-slate-600 dark:text-slate-400">{error.hint}</p>}
+        <button
+          type="button"
+          disabled={fixing}
+          onClick={() => void fixError()}
+          title="Sends your SQL, the error text (with values removed) and your column names. Never your data."
+          className="mt-3 rounded-md border border-indigo-300 bg-white px-2.5 py-1 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-800 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-950"
+        >
+          {fixing ? 'Asking AI…' : 'Fix with AI'}
+        </button>
       </div>
     </div>
   );

@@ -114,10 +114,27 @@ function ShareButton({ sql }: { sql: string }) {
   );
 }
 
+function ExplainButton({ sql }: { sql: string }) {
+  const explain = useApp((s) => s.explainSql);
+  const busy = useApp((s) => s.ai.busy === 'explain');
+  return (
+    <button
+      type="button"
+      className={buttonClass}
+      disabled={!sql || busy}
+      title="Ask AI to explain this query in plain English. Only the SQL and your column names are sent."
+      onClick={() => void explain()}
+    >
+      {busy ? 'Explaining…' : 'Explain'}
+    </button>
+  );
+}
+
 export function QueryActions() {
   const sql = useApp((s) => s.sql.trim());
   return (
     <>
+      <ExplainButton sql={sql} />
       <SaveButton sql={sql} />
       <ShareButton sql={sql} />
     </>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
+import { AiNotice, AskBar } from './components/AskBar';
 import { DropZone } from './components/DropZone';
 import { ExampleChips } from './components/ExampleChips';
 import { PrivacyBadge } from './components/PrivacyBadge';
@@ -76,7 +77,8 @@ function Workspace({ onFiles }: { onFiles: (files: File[]) => void }) {
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <div className="h-56 shrink-0 border-b border-slate-200 bg-white dark:border-slate-800">
+      <AskBar />
+      <div className="h-48 shrink-0 border-b border-slate-200 bg-white dark:border-slate-800">
         <SqlEditor value={sql} onChange={setSql} onRun={onRun} schema={schema} dark={dark} />
       </div>
       <div className="flex shrink-0 items-center gap-3 border-b border-slate-200 px-3 py-2 dark:border-slate-800">
@@ -107,6 +109,7 @@ function Workspace({ onFiles }: { onFiles: (files: File[]) => void }) {
           <ResultSummary />
         </div>
       </div>
+      <AiNotice />
       <ExampleChips />
       <div className="min-h-0 flex-1">
         <Results onFiles={onFiles} />

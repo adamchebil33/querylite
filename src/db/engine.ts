@@ -228,6 +228,31 @@ export async function exportQuery(sql: string, format: ExportFormat): Promise<Ui
   }
 }
 
+/**
+ * Checks that SQL is exactly one read-only SELECT statement, using DuckDB's
+ * own parser rather than pattern matching: `json_serialize_sql` refuses
+ * anything that isn't a SELECT (INSERT, DROP, COPY, PRAGMA...).
+ * Used to vet AI-written SQL before it is offered to the user.
+ */
+export async function checkReadOnly(sql: string): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const { conn } = await getEngine();
+  try {
+    const statement = await conn.prepare('SELECT json_serialize_sql(?::VARCHAR) AS parsed');
+    const result = await statement.query(sql);
+    await statement.close();
+    const parsed = JSON.parse(String(result.toArray()[0].parsed)) as {
+      error: boolean;
+      error_message?: string;
+      statements?: unknown[];
+    };
+    if (parsed.error) return { ok: false, reason: parsed.error_message ?? 'It could not be parsed.' };
+    if (parsed.statements?.length !== 1) return { ok: false, reason: 'It contains more than one statement.' };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, reason: friendlyError(error) };
+  }
+}
+
 /** Asks DuckDB to stop the query that is currently running. */
 export async function cancelQuery(): Promise<void> {
   const { conn } = await getEngine();

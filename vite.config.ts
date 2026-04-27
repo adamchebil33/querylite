@@ -14,5 +14,13 @@ function branding(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [branding(), react(), tailwindcss(), cloudflare()],
+  plugins: [
+    branding(),
+    react(),
+    tailwindcss(),
+    // Workers AI only runs on Cloudflare's network. By default local dev stays
+    // fully offline from Cloudflare (AI requests fail gracefully); run
+    // `npm run dev:ai` after `npx wrangler login` to use the real model locally.
+    cloudflare({ remoteBindings: Boolean(process.env.REMOTE_AI) }),
+  ],
 });

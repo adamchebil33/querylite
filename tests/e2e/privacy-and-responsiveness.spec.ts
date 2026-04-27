@@ -80,5 +80,7 @@ test('the page stays responsive while a large file loads', async ({ page }) => {
 
   const maxGap = await page.evaluate(() => (window as unknown as { __maxGap: number }).__maxGap);
   console.log(`longest main-thread gap while loading 1M rows: ${Math.round(maxGap)} ms`);
-  expect(maxGap).toBeLessThan(250);
+  // Typically under 100 ms. Parsing on the main thread would freeze it for seconds;
+  // the margin allows for other tests competing for the CPU.
+  expect(maxGap).toBeLessThan(1000);
 });

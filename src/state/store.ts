@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import {
   cancelQuery,
+  checkReadOnly,
   dropTable,
   errorMessage,
   friendlyError,
@@ -12,6 +13,8 @@ import {
   type QueryResult,
   type TableInfo,
 } from '../db/engine';
+import type { AiTask } from '../../shared/ai';
+import { AiError, askAi } from '../lib/aiClient';
 import { fileKind, quoteIdent, tableNameFor } from '../lib/files';
 import { tablesMentioned } from '../lib/sql';
 import { SAMPLES, sampleById } from '../samples';
@@ -50,7 +53,22 @@ export type QueryState =
     }
   | { status: 'error'; message: string };
 
+export interface AiState {
+  /** The request in flight, if any. */
+  busy: AiTask | null;
+  notice: { tone: 'ok' | 'error'; text: string } | null;
+  /** Plain-English explanation of the current query. */
+  explanation: string | null;
+}
+
 interface AppState {
+  ai: AiState;
+  /** Writes SQL for a plain-English question and puts it in the editor, without running it. */
+  askAi: (question: string) => Promise<void>;
+  explainSql: () => Promise<void>;
+  /** Asks for a corrected version of the query that just failed. */
+  fixError: () => Promise<void>;
+  dismissAi: () => void;
   engine: EngineStatus;
   tables: TableInfo[];
   /** Files currently loading, plus failed ones until dismissed. */
@@ -83,12 +101,73 @@ export const previewSql = (tableName: string) =>
 /** Statements that only read never change the list of tables. */
 const isReadOnly = (sql: string) => /^\s*(select|with|from|describe|show|explain|summarize)\b/i.test(sql);
 
+const aiMessage = (error: unknown) =>
+  error instanceof AiError ? error.message : 'AI is unavailable right now. Everything else still works.';
+
+/**
+ * Gets SQL from the AI and, only if DuckDB confirms it is a single read-only
+ * query, puts it in the editor for the user to review. It is never run here.
+ */
+async function offerAiSql(task: 'generate' | 'fix', input: { question?: string; sql?: string; error?: string }) {
+  const { setState: set, getState: get } = useApp;
+  const done = (notice: AiState['notice']) => set({ ai: { busy: null, notice, explanation: null } });
+  set({ ai: { busy: task, notice: null, explanation: null } });
+  try {
+    const sql = await askAi(task, get().tables, input);
+    const check = await checkReadOnly(sql);
+    if (!check.ok) {
+      done({
+        tone: 'error',
+        text: `The AI's answer was not a single read-only query, so it was discarded. Try rephrasing. (${check.reason})`,
+      });
+      return;
+    }
+    set({ sql });
+    done({
+      tone: 'ok',
+      text:
+        task === 'fix'
+          ? 'AI suggested a fix. Review it, then press Run.'
+          : 'AI wrote this query. Review it, then press Run.',
+    });
+  } catch (error) {
+    done({ tone: 'error', text: aiMessage(error) });
+  }
+}
+
 export const useApp = create<AppState>((set, get) => ({
   engine: { state: 'starting', progress: 0 },
   tables: [],
   loads: [],
   sql: '',
   query: { status: 'idle' },
+
+  ai: { busy: null, notice: null, explanation: null },
+
+  askAi: async (question) => {
+    if (!question.trim() || get().ai.busy) return;
+    await offerAiSql('generate', { question });
+  },
+
+  fixError: async () => {
+    const query = get().query;
+    if (query.status !== 'error' || get().ai.busy) return;
+    await offerAiSql('fix', { sql: get().sql, error: query.message });
+  },
+
+  explainSql: async () => {
+    const sql = get().sql.trim();
+    if (!sql || get().ai.busy) return;
+    set({ ai: { busy: 'explain', notice: null, explanation: null } });
+    try {
+      const explanation = await askAi('explain', get().tables, { sql });
+      set({ ai: { busy: null, notice: null, explanation } });
+    } catch (error) {
+      set({ ai: { busy: null, notice: { tone: 'error', text: aiMessage(error) }, explanation: null } });
+    }
+  },
+
+  dismissAi: () => set((s) => ({ ai: { ...s.ai, notice: null, explanation: null } })),
 
   startEngine: () => {
     set({ engine: { state: 'starting', progress: 0 } });

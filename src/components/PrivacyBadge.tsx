@@ -59,6 +59,10 @@ export function PrivacyBadge() {
               Share links contain the SQL text and the name of a sample dataset. They never contain
               your data.
             </li>
+            <li>
+              The optional AI helper receives your question, the SQL in the editor, and the names
+              and types of your tables and columns. It never receives rows, values or file contents.
+            </li>
             <li>Query history and saved queries are kept in this browser only.</li>
           </ul>
           <p className="mt-3 text-xs text-slate-500">
