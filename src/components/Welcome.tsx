@@ -56,6 +56,9 @@ export function Welcome({ onFiles }: { onFiles: (files: File[]) => void }) {
         <p className="mt-3 text-xs text-slate-500">
           Your files are read on this device and never uploaded.
         </p>
+        <a href="/bench" className="mt-6 text-xs text-indigo-600 hover:underline dark:text-indigo-400">
+          How fast is it on your device? Run the benchmark
+        </a>
       </div>
     </div>
   );
