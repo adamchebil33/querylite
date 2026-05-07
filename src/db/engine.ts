@@ -71,6 +71,9 @@ function readerFor(kind: FileKind, registeredName: string): string {
       return `read_json_auto(${file})`;
     case 'parquet':
       return `read_parquet(${file})`;
+    case 'excel':
+      // DuckDB's Excel reader, fetched on demand. Reads the first sheet.
+      return `read_xlsx(${file})`;
   }
 }
 

@@ -44,7 +44,7 @@ export function Welcome({ onFiles }: { onFiles: (files: File[]) => void }) {
         </div>
 
         <p className="mt-8 text-sm text-slate-600 dark:text-slate-400">
-          Or drag and drop your own CSV, TSV, JSON or Parquet files anywhere on this page.
+          Or drag and drop your own CSV, TSV, JSON, Parquet or Excel (.xlsx) files anywhere on this page.
         </p>
         <FilePickerButton
           onFiles={onFiles}

@@ -27,8 +27,9 @@ test('only downloads code from known hosts and never uploads', async ({ page, ba
       fixture('customers.json'),
       fixture('products.tsv'),
       fixture('zones.parquet'),
+      fixture('sales.xlsx'),
     ]);
-  await expect(page.getByTestId('table-item')).toHaveCount(4);
+  await expect(page.getByTestId('table-item')).toHaveCount(5);
 
   expect(unexpected).toEqual([]);
   expect(uploads).toEqual([]);

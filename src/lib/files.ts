@@ -1,4 +1,4 @@
-export type FileKind = 'csv' | 'json' | 'parquet';
+export type FileKind = 'csv' | 'json' | 'parquet' | 'excel';
 
 const EXTENSIONS: Record<string, FileKind> = {
   csv: 'csv',
@@ -8,6 +8,7 @@ const EXTENSIONS: Record<string, FileKind> = {
   jsonl: 'json',
   ndjson: 'json',
   parquet: 'parquet',
+  xlsx: 'excel',
 };
 
 export const ACCEPTED_EXTENSIONS = Object.keys(EXTENSIONS).map((ext) => `.${ext}`);

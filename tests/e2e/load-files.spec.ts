@@ -25,6 +25,14 @@ test('loads a Parquet file', async ({ page }) => {
   await expect(page.getByTestId('table-item')).toContainText('8 rows · 3 columns');
 });
 
+test('loads an Excel file', async ({ page }) => {
+  await page.goto('/');
+  await page.getByTestId('file-input').setInputFiles(fixture('sales.xlsx'));
+  await expect(page.getByTestId('table-item')).toContainText('3 rows · 4 columns');
+  const firstRow = page.getByTestId('result-table').locator('[aria-rowindex="2"]').getByRole('cell');
+  await expect(firstRow).toHaveText(['Widget', '3', '9.99', '2025-01-05']);
+});
+
 test('loading the same file twice creates a second table', async ({ page }) => {
   await page.goto('/');
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));

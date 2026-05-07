@@ -7,10 +7,12 @@ describe('fileKind', () => {
     expect(fileKind('a.TSV')).toBe('csv');
     expect(fileKind('a.ndjson')).toBe('json');
     expect(fileKind('trips.2025.parquet')).toBe('parquet');
+    expect(fileKind('Budget.XLSX')).toBe('excel');
   });
 
   it('rejects unsupported files', () => {
     expect(fileKind('photo.png')).toBeNull();
+    expect(fileKind('legacy.xls')).toBeNull();
     expect(fileKind('noextension')).toBeNull();
   });
 });

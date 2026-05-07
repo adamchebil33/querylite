@@ -179,7 +179,7 @@ function TablesTab() {
         ))}
         {tables.length === 0 && loads.length === 0 && (
           <li className="rounded-lg border border-dashed border-slate-300 p-4 text-center text-xs text-slate-500 dark:border-slate-700">
-            Drop CSV, TSV, JSON or Parquet files anywhere on the page.
+            Drop CSV, TSV, JSON, Parquet or Excel (.xlsx) files anywhere on the page.
           </li>
         )}
       </ul>

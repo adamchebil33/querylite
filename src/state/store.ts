@@ -191,7 +191,7 @@ export const useApp = create<AppState>((set, get) => ({
       };
       const kind = fileKind(file.name);
       if (!kind) {
-        load.error = 'Unsupported file type. Use CSV, TSV, JSON or Parquet.';
+        load.error = 'Unsupported file type. Use CSV, TSV, JSON, Parquet or Excel (.xlsx).';
         return { load };
       }
       const tableName = tableNameFor(file.name, reserved);
