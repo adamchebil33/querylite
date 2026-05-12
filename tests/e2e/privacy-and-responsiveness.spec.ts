@@ -19,7 +19,7 @@ test('only downloads code from known hosts and never uploads', async ({ page, ba
     }
   });
 
-  await page.goto('/');
+  await page.goto('/app');
   await page
     .getByTestId('file-input')
     .setInputFiles([
@@ -38,7 +38,7 @@ test('only downloads code from known hosts and never uploads', async ({ page, ba
 test('the security policy blocks connections to other sites', async ({ page }) => {
   // The policy is a response header, so it only exists on the production build.
   test.skip(!process.env.E2E_PREVIEW, 'needs the production build: npm run test:e2e:preview');
-  await page.goto('/');
+  await page.goto('/app');
   const outcome = await page.evaluate(() =>
     fetch('https://example.com/', { method: 'POST', body: 'secret', mode: 'no-cors' }).then(
       () => 'sent',
@@ -49,7 +49,7 @@ test('the security policy blocks connections to other sites', async ({ page }) =
 });
 
 test('the page stays responsive while a large file loads', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await expect(page.getByTestId('engine-status')).toContainText('Engine ready');
 
   // Build a ~1M row CSV inside the page (so no large fixture lives in the repo),

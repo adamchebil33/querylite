@@ -13,7 +13,7 @@ const cells = (page: Page, row: number) =>
   page.getByTestId('result-table').locator(`[aria-rowindex="${row + 2}"]`).getByRole('cell');
 
 test('previews the first loaded file automatically', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));
   await expect(page.locator('.cm-content')).toContainText('SELECT * FROM orders LIMIT 100;');
   await expect(page.getByTestId('result-summary')).toContainText('5 rows');
@@ -21,7 +21,7 @@ test('previews the first loaded file automatically', async ({ page }) => {
 });
 
 test('joins across two files', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page
     .getByTestId('file-input')
     .setInputFiles([fixture('orders.csv'), fixture('customers.json')]);
@@ -40,7 +40,7 @@ test('joins across two files', async ({ page }) => {
 });
 
 test('formats every common value type readably', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(
     page,
     `SELECT -1.50::DECIMAL(10,2) AS dec, DATE '2025-01-03' AS d,
@@ -64,7 +64,7 @@ test('formats every common value type readably', async ({ page }) => {
 });
 
 test('shows SQL errors and recovers', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELEC 1');
   await expect(page.getByTestId('query-error')).toContainText('syntax error');
   await runSql(page, 'SELECT 42 AS answer');
@@ -73,7 +73,7 @@ test('shows SQL errors and recovers', async ({ page }) => {
 });
 
 test('tables created by queries appear in the sidebar', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'CREATE TABLE squares AS SELECT i, i * i AS sq FROM range(10) t(i)');
   const item = page.getByTestId('table-item');
   await expect(item).toContainText('squares');
@@ -83,7 +83,7 @@ test('tables created by queries appear in the sidebar', async ({ page }) => {
 });
 
 test('autocompletes table and column names', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));
   await expect(page.getByTestId('table-item')).toHaveCount(1);
 
@@ -97,13 +97,13 @@ test('autocompletes table and column names', async ({ page }) => {
 });
 
 test('caps very large results', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT i FROM range(250000) t(i)');
   await expect(page.getByTestId('result-summary')).toContainText('First 100,000 rows');
 });
 
 test('scrolls through 100,000 rows while rendering only the visible ones', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT i, i * 2 AS doubled FROM range(100000) t(i)');
   await expect(page.getByTestId('result-summary')).toContainText('100,000 rows');
   const table = page.getByTestId('result-table');
@@ -115,7 +115,7 @@ test('scrolls through 100,000 rows while rendering only the visible ones', async
 });
 
 test('sorts by clicking a column header', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));
   await expect(page.getByTestId('result-summary')).toContainText('5 rows');
 
@@ -129,7 +129,7 @@ test('sorts by clicking a column header', async ({ page }) => {
 });
 
 test('sorting a cut-off result sorts the full result in the database', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT i FROM range(250000) t(i);');
   await expect(page.getByTestId('result-summary')).toContainText('First 100,000 rows', {
     timeout: 20_000,
@@ -141,7 +141,7 @@ test('sorting a cut-off result sorts the full result in the database', async ({ 
 });
 
 test('reports how many rows a query read', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page
     .getByTestId('file-input')
     .setInputFiles([fixture('orders.csv'), fixture('customers.json')]);
@@ -152,7 +152,7 @@ test('reports how many rows a query read', async ({ page }) => {
 });
 
 test('explains errors in plain parts', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT * FROM ordrs');
   const error = page.getByTestId('query-error');
   await expect(error).toContainText('Unknown table or function');
@@ -164,7 +164,7 @@ test('explains errors in plain parts', async ({ page }) => {
 });
 
 test('cancels a long-running query', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT sum(i) FROM range(20000000000) t(i)');
   await page.getByRole('button', { name: 'Cancel' }).click();
   await expect(page.getByRole('button', { name: 'Run' })).toBeVisible({ timeout: 10_000 });

@@ -35,13 +35,13 @@ export function ExportButtons({ sql }: { sql: string }) {
   };
 
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex items-baseline gap-2.5">
       {error && (
-        <span role="alert" className="max-w-64 truncate text-xs text-red-600" title={error}>
+        <span role="alert" className="max-w-64 truncate text-xs text-danger" title={error}>
           {error}
         </span>
       )}
-      <span className="text-xs text-slate-500">Export</span>
+      <span className="label">Export</span>
       {(['csv', 'parquet'] as const).map((format) => (
         <button
           key={format}
@@ -49,7 +49,7 @@ export function ExportButtons({ sql }: { sql: string }) {
           disabled={busy !== null}
           onClick={() => void save(format)}
           title={`Download the full result as ${format === 'csv' ? 'CSV' : 'Parquet'}`}
-          className="rounded-md border border-slate-300 px-2 py-1 text-xs font-medium hover:bg-slate-100 disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          className="font-mono text-[12px] text-ink underline decoration-rule decoration-1 underline-offset-4 hover:decoration-ink disabled:opacity-50"
         >
           {busy === format ? 'Saving…' : format === 'csv' ? 'CSV' : 'Parquet'}
         </button>

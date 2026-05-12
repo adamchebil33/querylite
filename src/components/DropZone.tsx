@@ -55,10 +55,10 @@ export function DropZone({
     <>
       {children}
       {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-indigo-600/20 backdrop-blur-sm">
-          <div className="rounded-2xl border-2 border-dashed border-indigo-500 bg-white px-10 py-8 text-center shadow-xl dark:bg-slate-900">
-            <p className="text-lg font-semibold">Drop to load</p>
-            <p className="mt-1 text-sm text-slate-500">Files stay on your device.</p>
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-paper/85 p-6">
+          <div className="flex h-full w-full flex-col items-center justify-center border-2 border-dashed border-ink text-center">
+            <p className="font-serif text-3xl">Drop to load</p>
+            <p className="mt-2 font-mono text-xs text-muted">Files stay on your device.</p>
           </div>
         </div>
       )}

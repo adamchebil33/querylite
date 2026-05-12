@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { APP_PATH } from '../lib/router';
 import { encodeShare } from '../lib/share';
 import { tablesMentioned } from '../lib/sql';
 import { SAMPLES } from '../samples';
 import { useLibrary } from '../state/library';
 import { useApp } from '../state/store';
 
-const buttonClass =
-  'rounded-md border border-slate-300 px-2.5 py-1.5 text-sm font-medium hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:hover:bg-slate-800';
+const buttonClass = 'btn';
 
 /** Builds a link holding the SQL and the sample datasets it reads. Never any data. */
 export function shareUrl(sql: string, tables: { name: string; source: string }[]): string {
@@ -21,7 +21,7 @@ export function shareUrl(sql: string, tables: { name: string; source: string }[]
       (t) => mentioned.has(t.name) && tables.some((x) => x.name === t.name && x.source === sample.name),
     ),
   ).map((sample) => sample.id);
-  return `${location.origin}${location.pathname}${encodeShare({ sql, samples })}`;
+  return `${location.origin}${APP_PATH}${encodeShare({ sql, samples })}`;
 }
 
 function SaveButton({ sql }: { sql: string }) {
@@ -59,7 +59,7 @@ function SaveButton({ sql }: { sql: string }) {
         placeholder="Name this query"
         aria-label="Name for the saved query"
         maxLength={60}
-        className="w-40 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm dark:border-slate-700 dark:bg-slate-900"
+        className="w-40 border border-ink bg-panel px-2 py-1 text-[13px] leading-5 outline-none"
       />
       <button type="submit" className={buttonClass} disabled={!name.trim()}>
         Save
@@ -97,15 +97,15 @@ function ShareButton({ sql }: { sql: string }) {
         {copied ? 'Link copied' : 'Share'}
       </button>
       {link && (
-        <span className="absolute top-full left-0 z-30 mt-1 flex w-80 items-center gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
+        <span className="absolute top-full left-0 z-30 mt-1 flex w-80 items-center gap-1 border border-ink bg-panel p-2">
           <input
             readOnly
             value={link}
             aria-label="Share link"
             onFocus={(event) => event.target.select()}
-            className="min-w-0 flex-1 rounded border border-slate-300 bg-transparent px-2 py-1 text-xs dark:border-slate-700"
+            className="min-w-0 flex-1 border border-rule bg-transparent px-2 py-1 font-mono text-xs"
           />
-          <button type="button" className="px-1 text-slate-400" aria-label="Close" onClick={() => setLink(null)}>
+          <button type="button" className="px-1 text-faint hover:text-ink" aria-label="Close" onClick={() => setLink(null)}>
             ✕
           </button>
         </span>

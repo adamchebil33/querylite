@@ -20,6 +20,8 @@ import { formatCell, isNumeric, toNumber } from '../lib/format';
 type Row = Record<string, unknown>;
 
 const SERIES_COLORS = Array.from({ length: MAX_SERIES }, (_, i) => `var(--chart-${i + 1})`);
+/** A lone series has no identity to encode, so it is drawn in ink. */
+const SOLO_COLOR = 'var(--chart-solo)';
 const TYPE_LABELS: Record<ChartType, string> = { bar: 'Bar', line: 'Line', scatter: 'Scatter' };
 
 function kindOf(type: DataType): ColumnKind {
@@ -136,6 +138,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
         if (stale) return;
         const { rows, series, xName, xKind } = data;
         const first = series[0].name;
+        const seriesColor = (i: number) => (series.length === 1 ? SOLO_COLOR : SERIES_COLORS[i]);
         const grid = { stroke: 'var(--chart-grid)', strokeOpacity: 1 };
         const axis = { stroke: 'var(--chart-axis)' };
         const horizontalBars = spec.type === 'bar' && xKind === 'text';
@@ -157,10 +160,9 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
             P.barX(rows, {
               x: first,
               y: 'x',
-              fill: SERIES_COLORS[0],
+              fill: SOLO_COLOR,
               insetTop: inset,
               insetBottom: inset,
-              rx2: 4,
               tip: { format: { y: true, x: true }, ...tipStyle },
             }),
             P.ruleX([0], axis),
@@ -185,10 +187,9 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
             P.barY(rows, {
               x: 'x',
               y: first,
-              fill: SERIES_COLORS[0],
+              fill: SOLO_COLOR,
               insetLeft: inset,
               insetRight: inset,
-              ry2: 4,
               tip: tipStyle,
             }),
             P.ruleY([0], axis),
@@ -200,7 +201,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
               P.lineY(rows, {
                 x: 'x',
                 y: s.name,
-                stroke: SERIES_COLORS[i],
+                stroke: seriesColor(i),
                 strokeWidth: 2,
                 strokeLinejoin: 'round',
                 strokeLinecap: 'round',
@@ -217,7 +218,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
                   x: 'x',
                   y: s.name,
                   r: 4,
-                  fill: SERIES_COLORS[i],
+                  fill: seriesColor(i),
                   stroke: 'var(--chart-surface)',
                   strokeWidth: 2,
                 }),
@@ -242,7 +243,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
               x: 'x',
               y: first,
               r: 4,
-              fill: SERIES_COLORS[0],
+              fill: SOLO_COLOR,
               fillOpacity: 0.75,
               stroke: 'var(--chart-surface)',
               strokeWidth: 1.5,
@@ -304,10 +305,10 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {data.series.length > 1 && (
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 px-3 pb-1 text-xs text-slate-600 dark:text-slate-300">
+        <ul className="flex flex-wrap gap-x-4 gap-y-1 px-3 pb-1 font-mono text-[11px] text-muted">
           {data.series.map((s, i) => (
             <li key={s.name} className="flex items-center gap-1.5">
-              <span className="h-0.5 w-4 rounded" style={{ background: SERIES_COLORS[i] }} />
+              <span className="h-0.5 w-4" style={{ background: SERIES_COLORS[i] }} />
               {s.name}
             </li>
           ))}
@@ -316,9 +317,9 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
       <div className="min-h-0 flex-1 overflow-y-auto px-2">
         <div ref={host} data-testid="chart" className="h-full w-full" />
       </div>
-      {failed && <p className="px-3 pb-2 text-xs text-red-600">The chart could not be drawn.</p>}
+      {failed && <p className="px-3 pb-2 text-xs text-danger">The chart could not be drawn.</p>}
       {data.shown < table.numRows && (
-        <p className="px-3 pb-2 text-xs text-slate-500">
+        <p className="px-3 pb-2 font-mono text-[11px] text-faint">
           {spec.type === 'bar'
             ? `Showing the first ${data.shown} of ${table.numRows.toLocaleString('en-US')} rows.`
             : `Showing ${data.shown.toLocaleString('en-US')} evenly spaced points of ${table.numRows.toLocaleString('en-US')}.`}
@@ -329,7 +330,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
 }
 
 const selectClass =
-  'max-w-40 rounded-md border border-slate-300 bg-white px-1.5 py-1 text-xs dark:border-slate-700 dark:bg-slate-900';
+  'max-w-40 border border-rule bg-panel px-1 py-0.5 font-mono text-[12px] text-ink normal-case tracking-normal';
 
 /** A chart of the current result with controls to change its type and columns. */
 export function ChartPanel({ table, initial }: { table: Table; initial: ChartSpec }) {
@@ -352,26 +353,24 @@ export function ChartPanel({ table, initial }: { table: Table; initial: ChartSpe
   };
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-slate-900">
+    <div className="flex h-full flex-col bg-panel">
       <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2">
-        <div role="group" aria-label="Chart type" className="flex rounded-md border border-slate-300 dark:border-slate-700">
+        <div role="group" aria-label="Chart type" className="flex border border-rule">
           {types.map((type) => (
             <button
               key={type}
               type="button"
               aria-pressed={spec.type === type}
               onClick={() => setSpec({ ...spec, type })}
-              className={`px-2 py-1 text-xs font-medium first:rounded-l-md last:rounded-r-md ${
-                spec.type === type
-                  ? 'bg-indigo-600 text-white'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+              className={`px-2 py-0.5 text-[12px] font-medium ${
+                spec.type === type ? 'bg-ink text-paper' : 'text-muted hover:text-ink'
               }`}
             >
               {TYPE_LABELS[type]}
             </button>
           ))}
         </div>
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="label flex items-center gap-1.5">
           X
           <select
             aria-label="Chart X column"
@@ -386,7 +385,7 @@ export function ChartPanel({ table, initial }: { table: Table; initial: ChartSpe
             ))}
           </select>
         </label>
-        <label className="flex items-center gap-1 text-xs text-slate-500">
+        <label className="label flex items-center gap-1.5">
           Y
           <select
             aria-label="Chart Y column"

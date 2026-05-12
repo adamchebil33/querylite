@@ -4,7 +4,7 @@ import path from 'node:path';
 const fixture = (name: string) => path.join(import.meta.dirname, '..', 'fixtures', name);
 
 test('loads CSV, TSV and JSON files as tables', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page
     .getByTestId('file-input')
     .setInputFiles([fixture('orders.csv'), fixture('customers.json'), fixture('products.tsv')]);
@@ -20,13 +20,13 @@ test('loads CSV, TSV and JSON files as tables', async ({ page }) => {
 });
 
 test('loads a Parquet file', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('zones.parquet'));
   await expect(page.getByTestId('table-item')).toContainText('8 rows · 3 columns');
 });
 
 test('loads an Excel file', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('sales.xlsx'));
   await expect(page.getByTestId('table-item')).toContainText('3 rows · 4 columns');
   const firstRow = page.getByTestId('result-table').locator('[aria-rowindex="2"]').getByRole('cell');
@@ -34,7 +34,7 @@ test('loads an Excel file', async ({ page }) => {
 });
 
 test('loading the same file twice creates a second table', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));
   await expect(page.getByTestId('table-item')).toHaveCount(1);
   await page.getByTestId('file-input').setInputFiles(fixture('orders.csv'));
@@ -42,7 +42,7 @@ test('loading the same file twice creates a second table', async ({ page }) => {
 });
 
 test('rejects unsupported files with a clear message', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByTestId('file-input').setInputFiles({
     name: 'photo.png',
     mimeType: 'image/png',

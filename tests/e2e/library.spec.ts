@@ -8,7 +8,7 @@ async function runSql(page: Page, sql: string) {
 }
 
 test('keeps query history and saved queries across reloads', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await runSql(page, 'SELECT 1 AS one');
   await runSql(page, 'SELEC oops');
   await runSql(page, 'SELECT 2 AS two');
@@ -50,6 +50,7 @@ test('a share link reopens the query on its sample dataset', async ({ page, cont
   // The link holds the sample's name and the SQL, and nothing else.
   expect([...fragment.keys()].sort()).toEqual(['data', 'sql']);
   expect(fragment.get('data')).toBe('emissions');
+  expect(new URL(link).pathname).toBe('/app');
 
   const visitor = await context.newPage();
   await visitor.goto(link);
@@ -68,7 +69,7 @@ test('a share link for private tables shows the SQL without running it', async (
 
 test('dark mode can be toggled and is remembered', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/');
+  await page.goto('/app');
   const html = page.locator('html');
   await expect(html).not.toHaveClass(/dark/);
   await page.getByRole('button', { name: 'Switch to dark mode' }).click();
@@ -81,12 +82,12 @@ test('dark mode can be toggled and is remembered', async ({ page }) => {
 
 test('follows the system color scheme by default', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
+  await page.goto('/app');
   await expect(page.locator('html')).toHaveClass(/dark/);
 });
 
 test('the privacy badge explains the design', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByRole('button', { name: 'Nothing is uploaded' }).click();
   const dialog = page.getByRole('dialog', { name: 'How your data stays private' });
   await expect(dialog).toContainText('never sent to a server');

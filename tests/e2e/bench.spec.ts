@@ -17,10 +17,10 @@ test('the benchmark page measures queries over millions of rows', async ({ page 
   console.log(`\n${markdown}\n`);
 });
 
-test('the app links to the benchmark page', async ({ page }) => {
+test('the landing page links to the benchmark and back', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('link', { name: /Run the benchmark/ }).click();
   await expect(page.getByRole('heading', { name: 'Benchmark' })).toBeVisible();
   await page.getByRole('link', { name: /Back to/ }).click();
-  await expect(page.getByTestId('sql-editor')).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Query millions of rows/ })).toBeVisible();
 });

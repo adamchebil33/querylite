@@ -7,13 +7,12 @@ import { ChartPanel, defaultChart } from './ChartPanel';
 import { ExportButtons } from './ExportButtons';
 import { ResultTable } from './ResultTable';
 import { Elapsed } from './Sidebar';
-import { Welcome } from './Welcome';
 
 export function ResultSummary() {
   const query = useApp((s) => s.query);
   if (query.status === 'running') {
     return (
-      <span className="text-sm text-slate-500">
+      <span className="font-mono text-[12px] text-muted">
         Running… <Elapsed since={query.startedAt} />
       </span>
     );
@@ -33,7 +32,7 @@ function ResultSummaryText() {
   const { table, truncated, elapsedMs } = query.result;
   const limit = MAX_RESULT_ROWS.toLocaleString('en-US');
   return (
-    <span data-testid="result-summary" className="text-sm text-slate-500">
+    <span data-testid="result-summary" className="font-mono text-[12px] text-muted">
       {truncated ? (
         <span title={`Only the first ${limit} rows are shown. Add a LIMIT or aggregate to narrow the result.`}>
           First {limit} rows
@@ -65,22 +64,22 @@ function QueryError({ message }: { message: string }) {
       <div
         role="alert"
         data-testid="query-error"
-        className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm dark:border-red-900 dark:bg-red-950/40"
+        className="max-w-3xl border-l-2 border-danger bg-danger-wash px-4 py-3 text-sm"
       >
-        <p className="font-semibold text-red-800 dark:text-red-200">{error.title}</p>
-        <p className="mt-1 whitespace-pre-wrap text-red-800 dark:text-red-200">{error.message}</p>
+        <p className="font-semibold text-danger">{error.title}</p>
+        <p className="mt-1 whitespace-pre-wrap">{error.message}</p>
         {error.context && (
-          <pre className="mt-3 overflow-x-auto rounded-md bg-white/70 p-2 font-mono text-[13px] text-slate-800 dark:bg-slate-950/60 dark:text-slate-200">
+          <pre className="mt-3 overflow-x-auto border border-rule bg-panel p-2 font-mono text-[12.5px] text-ink">
             {error.context}
           </pre>
         )}
-        {error.hint && <p className="mt-3 text-slate-600 dark:text-slate-400">{error.hint}</p>}
+        {error.hint && <p className="mt-3 text-muted">{error.hint}</p>}
         <button
           type="button"
           disabled={fixing}
           onClick={() => void fixError()}
           title="Sends your SQL, the error text (with values removed) and your column names. Never your data."
-          className="mt-3 rounded-md border border-indigo-300 bg-white px-2.5 py-1 text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 dark:border-indigo-800 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-950"
+          className="btn mt-3"
         >
           {fixing ? 'Asking AI…' : 'Fix with AI'}
         </button>
@@ -89,7 +88,7 @@ function QueryError({ message }: { message: string }) {
   );
 }
 
-export function Results({ onFiles }: { onFiles: (files: File[]) => void }) {
+export function Results() {
   const query = useApp((s) => s.query);
   const isEmpty = useApp((s) => s.tables.length === 0 && s.loads.length === 0);
   const sortBy = useApp((s) => s.sortBy);
@@ -97,15 +96,17 @@ export function Results({ onFiles }: { onFiles: (files: File[]) => void }) {
   if (query.status === 'error') return <QueryError message={query.message} />;
   if (query.status === 'running') return null;
   if (query.status === 'idle') {
-    return isEmpty ? (
-      <Welcome onFiles={onFiles} />
-    ) : (
-      <p className="p-4 text-sm text-slate-500">Results will appear here.</p>
+    return (
+      <p className="p-4 font-mono text-[12px] text-faint">
+        {isEmpty
+          ? 'No data yet. Drop files anywhere on the page, or load a sample dataset from the sidebar.'
+          : 'Results will appear here.'}
+      </p>
     );
   }
   const { table } = query.result;
   if (table.schema.fields.length === 0 || table.numRows === 0) {
-    return <p className="p-4 text-sm text-slate-500">Query ran successfully and returned no rows.</p>;
+    return <p className="p-4 font-mono text-[12px] text-muted">Query ran successfully and returned no rows.</p>;
   }
   return (
     // A new result starts scrolled to the top with fresh column widths and a fresh chart.
@@ -132,21 +133,21 @@ function ResultView(props: Parameters<typeof ResultTable>[0]) {
           <button
             type="button"
             onClick={() => setShowChart(true)}
-            className="absolute top-2 right-4 z-30 rounded-md border border-slate-300 bg-white px-2 py-1 text-xs font-medium shadow-sm hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800"
+            className="btn absolute top-2 right-4 z-30"
           >
             Show chart
           </button>
         )}
       </div>
       {chart && showChart && (
-        <div className="relative h-1/2 min-h-0 shrink-0 border-t border-slate-200 lg:h-auto lg:w-[46%] lg:border-t-0 lg:border-l dark:border-slate-800">
+        <div className="relative h-1/2 min-h-0 shrink-0 border-t border-rule lg:h-auto lg:w-[46%] lg:border-t-0 lg:border-l">
           <ChartPanel table={table} initial={chart} />
           <button
             type="button"
             aria-label="Hide chart"
             title="Hide chart"
             onClick={() => setShowChart(false)}
-            className="absolute top-2 right-2 rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800"
+            className="absolute top-2 right-2 px-1.5 text-faint hover:text-ink"
           >
             ✕
           </button>

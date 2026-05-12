@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 
 test('exports the full result as CSV and Parquet', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   const editor = page.locator('.cm-content');
   // More rows than the display limit, to prove the export is not cut off.
   await editor.fill('SELECT i AS id, i * 2 AS doubled FROM range(150000) t(i); -- trailing comment');
@@ -28,7 +28,7 @@ test('exports the full result as CSV and Parquet', async ({ page }) => {
 });
 
 test('explains when a statement cannot be exported', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/app');
   const editor = page.locator('.cm-content');
   await editor.fill('CREATE TABLE t AS SELECT 1 AS x');
   await editor.press('ControlOrMeta+Enter');

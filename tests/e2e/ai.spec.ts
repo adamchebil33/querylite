@@ -24,7 +24,7 @@ async function mockAi(page: Page, answer: (request: AiRequest) => { status?: num
 }
 
 async function loadFixtures(page: Page) {
-  await page.goto('/');
+  await page.goto('/app');
   await page
     .getByTestId('file-input')
     .setInputFiles([fixture('orders.csv'), fixture('customers.json')]);

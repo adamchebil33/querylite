@@ -6,7 +6,20 @@ import { sortOrder, type SortSpec } from '../lib/sort';
 
 const ROW_HEIGHT = 28;
 const HEADER_HEIGHT = 44;
-const CHAR_WIDTH = 7.9; // 13px monospace
+const CELL_FONT = '12px "IBM Plex Mono"';
+
+let measuredCharWidth: number | null = null;
+
+/** Width of one monospace character in the cell font, measured once the font has loaded. */
+function charWidth(): number {
+  if (measuredCharWidth !== null) return measuredCharWidth;
+  const context = document.createElement('canvas').getContext('2d');
+  if (!context) return 7.4;
+  context.font = CELL_FONT;
+  const width = context.measureText('0'.repeat(20)).width / 20;
+  if (document.fonts.check(CELL_FONT)) measuredCharWidth = width;
+  return width;
+}
 const MIN_WIDTH = 72;
 const MAX_WIDTH = 420;
 const INDEX_WIDTH = 64;
@@ -16,7 +29,7 @@ function SortArrow({ direction }: { direction: 'asc' | 'desc' | null }) {
     <svg
       viewBox="0 0 10 12"
       aria-hidden
-      className={`h-3 w-2.5 shrink-0 ${direction ? 'fill-indigo-600 dark:fill-indigo-400' : 'fill-slate-300 opacity-0 group-hover:opacity-100 dark:fill-slate-600'}`}
+      className={`h-3 w-2.5 shrink-0 ${direction ? 'fill-accent' : 'fill-faint opacity-0 group-hover:opacity-100'}`}
     >
       {direction === 'desc' ? <path d="M5 11L1 5h8z" /> : <path d="M5 1l4 6H1z" />}
     </svg>
@@ -54,7 +67,7 @@ export function ResultTable({
       for (let r = 0; r < table.numRows; r += step) {
         chars = Math.max(chars, (formatCell(columns[c].get(r), field.type) ?? 'NULL').length);
       }
-      return Math.round(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, chars * CHAR_WIDTH + 26)));
+      return Math.ceil(Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, chars * charWidth() + 28)));
     });
   }, [table, fields, columns]);
   const totalWidth = INDEX_WIDTH + widths.reduce((sum, w) => sum + w, 0);
@@ -75,23 +88,23 @@ export function ResultTable({
   });
 
   return (
-    <div ref={scroller} className="h-full overflow-auto bg-white dark:bg-slate-900">
+    <div ref={scroller} className="h-full overflow-auto bg-panel">
       <div
         role="table"
         data-testid="result-table"
         aria-rowcount={table.numRows + 1}
         style={{ width: totalWidth, height: HEADER_HEIGHT + virtualizer.getTotalSize() }}
-        className="relative text-[13px]"
+        className="relative text-[12px]"
       >
         <div
           role="row"
           style={{ height: HEADER_HEIGHT }}
-          className="sticky top-0 z-20 flex border-b border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800"
+          className="sticky top-0 z-20 flex border-b border-ink bg-panel"
         >
           <div
             role="columnheader"
             style={{ width: INDEX_WIDTH }}
-            className="sticky left-0 z-10 shrink-0 bg-slate-100 dark:bg-slate-800"
+            className="sticky left-0 z-10 shrink-0 bg-panel"
           />
           {fields.map((field, c) => {
             const direction = sort?.column === c ? sort.direction : null;
@@ -107,13 +120,13 @@ export function ResultTable({
                   type="button"
                   aria-label={`Sort by ${field.name}`}
                   onClick={() => onSort(c)}
-                  className={`group flex h-full w-full flex-col justify-center px-3 hover:bg-slate-200 dark:hover:bg-slate-700 ${isNumeric(field.type) ? 'items-end' : 'items-start'}`}
+                  className={`group flex h-full w-full flex-col justify-center px-3 hover:bg-wash ${isNumeric(field.type) ? 'items-end' : 'items-start'}`}
                 >
                   <span className="flex max-w-full items-center gap-1">
-                    <span className="truncate font-semibold">{field.name}</span>
+                    <span className="truncate font-mono text-[12px] font-semibold">{field.name}</span>
                     <SortArrow direction={direction} />
                   </span>
-                  <span className="text-[11px] leading-tight text-slate-400">{typeLabel(field.type)}</span>
+                  <span className="font-mono text-[10.5px] leading-tight text-faint">{typeLabel(field.type)}</span>
                 </button>
               </div>
             );
@@ -128,11 +141,11 @@ export function ResultTable({
               role="row"
               aria-rowindex={item.index + 2}
               style={{ height: ROW_HEIGHT, top: HEADER_HEIGHT + item.start }}
-              className={`absolute left-0 flex w-full border-b border-slate-100 dark:border-slate-800 ${item.index % 2 ? 'bg-slate-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950/40'}`}
+              className="absolute left-0 flex w-full border-b border-rule/60 bg-panel hover:bg-wash"
             >
               <div
                 style={{ width: INDEX_WIDTH }}
-                className="sticky left-0 z-10 shrink-0 bg-inherit px-3 text-right leading-7 text-slate-400 tabular-nums select-none"
+                className="sticky left-0 z-10 shrink-0 bg-inherit px-3 text-right font-mono text-[11px] leading-7 text-faint tabular-nums select-none"
               >
                 {(item.index + 1).toLocaleString('en-US')}
               </div>
@@ -146,7 +159,7 @@ export function ResultTable({
                     title={text !== null && text.length > 30 ? text : undefined}
                     className={`shrink-0 truncate px-3 font-mono leading-7 ${isNumeric(field.type) ? 'text-right tabular-nums' : ''}`}
                   >
-                    {text === null ? <span className="text-slate-400 italic">NULL</span> : text}
+                    {text === null ? <span className="text-faint">NULL</span> : text}
                   </div>
                 );
               })}

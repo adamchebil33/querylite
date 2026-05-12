@@ -1,6 +1,111 @@
 @import 'tailwindcss';
 
+/* Fonts are bundled with the app, so no request goes to a font service. */
+@import '@fontsource/ibm-plex-sans/latin-400.css';
+@import '@fontsource/ibm-plex-sans/latin-500.css';
+@import '@fontsource/ibm-plex-sans/latin-600.css';
+@import '@fontsource/ibm-plex-mono/latin-400.css';
+@import '@fontsource/ibm-plex-mono/latin-500.css';
+@import '@fontsource/ibm-plex-mono/latin-600.css';
+@import '@fontsource/ibm-plex-serif/latin-400.css';
+@import '@fontsource/ibm-plex-serif/latin-400-italic.css';
+
 @custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens. The look is a paper ledger: warm paper, ink, hairline
+ * rules, square corners, one accent (a ledger green). Components use these names
+ * (bg-paper, text-ink, border-rule...) and never raw colors, so light and
+ * dark mode are defined once, here.
+ */
+:root {
+  --paper: #f6f4ee; /* page background */
+  --panel: #fdfcf8; /* editor, table and chart surfaces */
+  --wash: #edeae1; /* hover and header fills */
+  --ink: #1b1a17;
+  --muted: #66635b;
+  --faint: #97938a;
+  --rule: #d9d5c9;
+  --accent: #1c6b4a;
+  --accent-wash: #dcebe2;
+  --danger: #a4281f;
+  --danger-wash: #f8e8e4;
+  --ok: #2f7a4d;
+
+  --syn-keyword: #1b1a17;
+  --syn-string: #8a5a12;
+  --syn-number: #1c6b4a;
+  --syn-comment: #97938a;
+  --syn-function: #1f5f8b;
+
+  /* Chart series: a colorblind-checked palette, used in this fixed order. */
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-3: #1baf7a;
+  --chart-4: #eda100;
+  --chart-5: #e87ba4;
+  --chart-6: #008300;
+  --chart-7: #6250d6;
+  --chart-8: #e34948;
+  --chart-solo: #2b2a26;
+  --chart-surface: var(--panel);
+  --chart-text: var(--muted);
+  --chart-grid: #e7e3d8;
+  --chart-axis: #bdb8aa;
+}
+
+.dark {
+  --paper: #121210;
+  --panel: #191917;
+  --wash: #24231f;
+  --ink: #ebe7dc;
+  --muted: #a39f93;
+  --faint: #716e65;
+  --rule: #302f2a;
+  --accent: #7ccfa1;
+  --accent-wash: #173224;
+  --danger: #f08d82;
+  --danger-wash: #351b18;
+  --ok: #6dbf8c;
+
+  --syn-keyword: #ebe7dc;
+  --syn-string: #d8b46a;
+  --syn-number: #7ccfa1;
+  --syn-comment: #716e65;
+  --syn-function: #8fc1e6;
+
+  /* The same hues, re-stepped for a dark surface. */
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-3: #199e70;
+  --chart-4: #c98500;
+  --chart-5: #d55181;
+  --chart-6: #0ca30c;
+  --chart-7: #9085e9;
+  --chart-8: #e66767;
+  --chart-solo: #d5d1c5;
+  --chart-grid: #262521;
+  --chart-axis: #45433c;
+}
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-serif: 'IBM Plex Serif', Georgia, serif;
+
+  --color-paper: var(--paper);
+  --color-panel: var(--panel);
+  --color-wash: var(--wash);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-rule: var(--rule);
+  --color-accent: var(--accent);
+  --color-accent-wash: var(--accent-wash);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
+  --color-ok: var(--ok);
+}
 
 html,
 body,
@@ -10,48 +115,82 @@ body,
 
 /* Match the page background before the app starts, to avoid a flash. */
 html {
-  background: #f8fafc;
+  background: #f6f4ee;
 }
 @media (prefers-color-scheme: dark) {
   html {
-    background: #020617;
+    background: #121210;
   }
 }
 html.dark {
-  background: #020617;
+  background: #121210;
 }
 
-/*
- * Chart colors. The eight series colors are a colorblind-checked palette,
- * used in this fixed order; the dark values are the same hues re-stepped
- * for a dark background.
- */
-:root {
-  --chart-1: #2a78d6;
-  --chart-2: #eb6834;
-  --chart-3: #1baf7a;
-  --chart-4: #eda100;
-  --chart-5: #e87ba4;
-  --chart-6: #008300;
-  --chart-7: #6250d6;
-  --chart-8: #e34948;
-  --chart-surface: #ffffff;
-  --chart-text: #52514e;
-  --chart-grid: #e6e5df;
-  --chart-axis: #c3c2b7;
+body {
+  font-family: var(--font-sans);
+  color: var(--ink);
 }
 
-.dark {
-  --chart-1: #3987e5;
-  --chart-2: #d95926;
-  --chart-3: #199e70;
-  --chart-4: #c98500;
-  --chart-5: #d55181;
-  --chart-6: #0ca30c;
-  --chart-7: #9085e9;
-  --chart-8: #e66767;
-  --chart-surface: #0f172a;
-  --chart-text: #c3c2b7;
-  --chart-grid: #1e293b;
-  --chart-axis: #334155;
+::selection {
+  background: var(--accent-wash);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@layer components {
+  /* Small uppercase mono label used for section headings. */
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Secondary button: text with a hairline border. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border: 1px solid var(--rule);
+    background: var(--panel);
+    padding: 0.3rem 0.65rem;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25rem;
+    white-space: nowrap;
+  }
+  .btn:hover:not(:disabled) {
+    border-color: var(--ink);
+  }
+  .btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  /* Primary button: solid ink. */
+  .btn-primary {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+  }
+
+  /* Inline text action. */
+  .link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+  .link:hover {
+    color: var(--ink);
+  }
 }

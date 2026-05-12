@@ -21,7 +21,7 @@ test('try a sample dataset: one click to a result over millions of rows', async 
 
 test('every example question of every sample runs', async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByRole('button', { name: 'Load sample NYC taxi trips' }).click();
   await page.getByRole('button', { name: 'Load sample World CO₂ emissions' }).click();
   await expect(page.getByTestId('table-item')).toHaveCount(3, { timeout: 45_000 });

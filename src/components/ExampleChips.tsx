@@ -16,10 +16,10 @@ export function ExampleChips() {
   return (
     <div
       data-testid="example-chips"
-      className="flex shrink-0 items-center gap-2 overflow-x-auto border-b border-slate-200 px-3 py-2 dark:border-slate-800"
+      className="flex shrink-0 items-baseline gap-5 overflow-x-auto border-b border-rule px-3 py-2"
     >
-      <span className="shrink-0 text-xs font-medium text-slate-500">Try:</span>
-      {questions.map((question) => {
+      <span className="label shrink-0">Examples</span>
+      {questions.map((question, index) => {
         const active = sql.trim() === question.sql.trim();
         return (
           <button
@@ -29,13 +29,20 @@ export function ExampleChips() {
               setSql(question.sql);
               void run(question.sql);
             }}
-            className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition ${
-              active
-                ? 'border-indigo-500 bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300'
-                : 'border-slate-300 hover:border-indigo-400 hover:text-indigo-600 dark:border-slate-700 dark:hover:text-indigo-400'
+            className={`group flex shrink-0 items-baseline gap-1.5 text-[13px] ${
+              active ? 'text-ink' : 'text-muted hover:text-ink'
             }`}
           >
-            {question.label}
+            <span aria-hidden className={`font-mono text-[11px] ${active ? 'text-accent' : 'text-faint'}`}>
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span
+              className={`underline decoration-1 underline-offset-4 ${
+                active ? 'decoration-accent' : 'decoration-rule group-hover:decoration-ink'
+              }`}
+            >
+              {question.label}
+            </span>
           </button>
         );
       })}
