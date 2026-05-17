@@ -1,4 +1,4 @@
-import { APP_NAME } from '../config';
+import { APP_NAME, REPO_URL } from '../config';
 import { APP_PATH, navigate } from '../lib/router';
 import { SAMPLES } from '../samples';
 import { useApp } from '../state/store';
@@ -163,6 +163,9 @@ export function Landing({ onFiles }: { onFiles: (files: File[]) => void }) {
           <span>{APP_NAME.toLowerCase()}</span>
           <a href="/bench" className="hover:text-ink">
             Benchmark
+          </a>
+          <a href={REPO_URL} rel="noreferrer" className="hover:text-ink">
+            Source on GitHub
           </a>
           {SAMPLES.map((sample) => (
             <a key={sample.id} href={sample.sourceUrl} rel="noreferrer" className="hover:text-ink">

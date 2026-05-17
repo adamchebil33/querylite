@@ -1,5 +1,8 @@
 {
   "name": "querylite",
+  "description": "SQL playground that runs DuckDB in the browser: query millions of rows without uploading them.",
+  "license": "MIT",
+  "repository": "github:adamchebil33/querylite",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -13,6 +16,7 @@
     "test:e2e": "playwright test",
     "test:e2e:preview": "E2E_PREVIEW=1 playwright test",
     "capture": "node scripts/capture-media.mjs",
+    "record": "node scripts/record-demo.mjs",
     "build:samples": "node scripts/build-samples.mjs",
     "deploy": "npm run build && wrangler deploy"
   },
