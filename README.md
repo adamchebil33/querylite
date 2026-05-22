@@ -125,14 +125,41 @@ What they cover: loading every file format, joins across files, value formatting
 
 The whole app, including the AI endpoint, runs on Cloudflare's free plan. You need a GitHub account and a Cloudflare account; no credit card.
 
-**First deploy, from your machine:**
+### First deploy, step by step
 
-```bash
-npx wrangler login   # opens the browser to authorise your Cloudflare account
-npm run deploy       # builds, then uploads the site and the Worker
-```
+1. **Push the code to GitHub** so the repository is up to date.
+2. **Create a Cloudflare account** at [dash.cloudflare.com](https://dash.cloudflare.com) if you don't have one. It is free and asks for no credit card. Stay on the Free plan.
+3. **Authorise Wrangler** (Cloudflare's command-line tool, already installed with the project):
+   ```bash
+   npx wrangler login
+   ```
+   This opens your browser; approve the request.
+4. **Deploy:**
+   ```bash
+   npm run deploy
+   ```
+   It builds the app, then uploads the site and the Worker. The first time, it may ask you to choose a `workers.dev` subdomain.
+5. **Note the URL** Wrangler prints: `https://querylite.<your-subdomain>.workers.dev`. That is the live site.
 
-Wrangler prints the live URL, `https://querylite.<your-subdomain>.workers.dev`. The first time, it asks you to choose that subdomain.
+### After the first deploy
+
+1. **Put the URL in this README:** replace the "coming soon" text between the `LIVE_DEMO_URL` markers near the top with a link to the live site, then commit.
+2. **Check the live site:**
+   - Open it and click **Try it on 2.9 million taxi trips**. A result and a chart should appear within a few seconds.
+   - Drop a file of your own and run a query.
+   - In the editor, type a question in the **Ask** bar and click **Write SQL**. This is the first time the real AI model is used: check that the SQL it writes is sensible, then try **Explain** and, after a deliberate typo, **Fix with AI**.
+   - Click **Write SQL** more than five times within a minute. The sixth request should be refused with a "too many AI requests" message.
+   - Open the browser's developer tools, go to the Network tab, load a file, and confirm no request carries its contents.
+3. **Run the benchmark** at `/bench` on the live site and, if the numbers differ much from the table above, update the table and the three figures on the landing page (`MEASURED` in `src/components/Landing.tsx`).
+
+### If the deploy fails
+
+- **An error about the AI binding or `ratelimits`:** the account may not have that feature enabled yet. The app works without either; remove the `ai` or `ratelimits` block from `wrangler.jsonc` to deploy without it, then look up the error in Cloudflare's documentation.
+- **An asset is too large:** Cloudflare's free plan limits each file to 25 MiB. The largest file is `public/samples/trips.parquet` (about 18 MiB); if you rebuilt the samples and it grew, trim columns in `scripts/build-samples.mjs`.
+
+### Later deploys
+
+Run `npm run deploy` again, or set up automatic deploys:
 
 **Automatic deploys on every push (optional):** in the Cloudflare dashboard, open *Workers & Pages*, select the `querylite` Worker, then *Settings → Builds → Connect* and pick this GitHub repository. Use `npm run build` as the build command and `npx wrangler deploy` as the deploy command. Cloudflare then builds and deploys each push to `main`. No GitHub secrets are needed.
 
