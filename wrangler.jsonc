@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "querylite",
   "main": "worker/index.ts",
-  "compatibility_date": "2026-03-16",
+  "compatibility_date": "2026-11-17",
   // Workers AI, used only by /api/ai. On the Free plan it stops with an error
   // once the daily allowance is used up; it never bills.
   "ai": { "binding": "AI" },

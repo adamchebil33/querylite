@@ -7,13 +7,13 @@ import { PrivacyBadge } from './PrivacyBadge';
 import { ThemeToggle, Wordmark } from './ThemeToggle';
 
 /**
- * Figures from the /bench page, measured in Chrome on a 4-thread Linux
- * laptop on 2026-04-30. Update them from a fresh run if the engine changes.
+ * Figures from the /bench page, measured in Chrome 158 on a 4-thread Linux
+ * laptop on 2026-11-19 (DuckDB v1.5.4). Update them from a fresh run if the engine changes.
  */
 const MEASURED = [
-  { value: '32 ms', label: 'to join and group 2.87 million rows' },
-  { value: '3 ms', label: 'to count 2.87 million rows' },
-  { value: '0.8 s', label: 'to parse a 59 MB CSV with a million rows' },
+  { value: '24 ms', label: 'to join and group 2.87 million rows' },
+  { value: '2.2 ms', label: 'to count 2.87 million rows' },
+  { value: '0.5 s', label: 'to parse a 59 MB CSV with a million rows' },
 ];
 
 const HOW_IT_WORKS = [

@@ -14,21 +14,21 @@ Querylite is a SQL playground where the database runs inside the browser tab. Dr
 
 Run on the built-in [`/bench`](src/bench/benchmark.ts) page, which anyone can re-run on their own device.
 
-Measured on Chrome, Linux, 4 CPU threads, 8+ GB RAM, 2026-04-30, DuckDB (WebAssembly, single thread).
+Measured on Chrome 158, Linux, 4 CPU threads, 8+ GB RAM, 2026-11-19, DuckDB v1.5.4 (WebAssembly, single thread).
 
 | Query over 2,869,937 rows | Median | Fastest |
 | --- | ---: | ---: |
-| Count all rows | 3.0 ms | 1.9 ms |
-| Filter and aggregate | 31 ms | 25 ms |
-| Group by hour (24 groups) | 40 ms | 36 ms |
-| Group by route (tens of thousands of groups) | 53 ms | 46 ms |
-| Join to zones and group by borough | 32 ms | 27 ms |
-| Median and 95th percentile per payment type | 182 ms | 172 ms |
-| Top 100 by tip (sort) | 48 ms | 44 ms |
-| Daily totals with 7-day moving average (window) | 32 ms | 25 ms |
+| Count all rows | 2.2 ms | 1.9 ms |
+| Filter and aggregate | 18 ms | 16 ms |
+| Group by hour (24 groups) | 32 ms | 30 ms |
+| Group by route (tens of thousands of groups) | 41 ms | 34 ms |
+| Join to zones and group by borough | 24 ms | 23 ms |
+| Median and 95th percentile per payment type | 137 ms | 136 ms |
+| Top 100 by tip (sort) | 41 ms | 37 ms |
+| Daily totals with 7-day moving average (window) | 21 ms | 20 ms |
 
-- Download and load 2,869,937 rows (18 MB Parquet): 1.9 s
-- Parse a 59 MB CSV with 1,000,000 rows: 0.8 s
+- Download and load 2,869,937 rows (18 MB Parquet): 1.0 s
+- Parse a 59 MB CSV with 1,000,000 rows: 0.5 s
 
 Each query runs once to warm up, then five times; the table shows the median and the fastest run.
 
