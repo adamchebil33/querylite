@@ -56,7 +56,12 @@ export type QueryState =
 export interface AiState {
   /** The request in flight, if any. */
   busy: AiTask | null;
-  notice: { tone: 'ok' | 'error'; text: string } | null;
+  notice: {
+    tone: 'ok' | 'error';
+    text: string;
+    /** The SQL the AI just put in the editor; a Run button is offered while the editor still holds it. */
+    sql?: string;
+  } | null;
   /** Plain-English explanation of the current query. */
   explanation: string | null;
 }
@@ -125,10 +130,11 @@ async function offerAiSql(task: 'generate' | 'fix', input: { question?: string; 
     set({ sql });
     done({
       tone: 'ok',
+      sql,
       text:
         task === 'fix'
-          ? 'AI suggested a fix. Review it, then press Run.'
-          : 'AI wrote this query. Review it, then press Run.',
+          ? 'AI suggested a fix and put it in the editor above. Review it before running it.'
+          : `AI wrote SQL for “${input.question?.trim()}” and put it in the editor above. Review it before running it.`,
     });
   } catch (error) {
     done({ tone: 'error', text: aiMessage(error) });

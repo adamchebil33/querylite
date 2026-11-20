@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useApp } from '../state/store';
+import { AiIcon } from './AiIcon';
 
 /** "Ask in plain English": the AI writes SQL into the editor; the user reviews and runs it. */
 export function AskBar() {
@@ -16,7 +17,8 @@ export function AskBar() {
         void ask(question);
       }}
     >
-      <span className="label shrink-0" aria-hidden>
+      <span className="label flex shrink-0 items-center gap-1.5" aria-hidden>
+        <AiIcon />
         Ask
       </span>
       <input
@@ -39,6 +41,7 @@ export function AskBar() {
         Only column names are sent to AI
       </span>
       <button type="submit" disabled={!hasTables || busy || question.trim() === ''} className="btn shrink-0">
+        <AiIcon />
         {busy ? 'Writing…' : 'Write SQL'}
       </button>
     </form>
@@ -49,6 +52,8 @@ export function AskBar() {
 export function AiNotice() {
   const ai = useApp((s) => s.ai);
   const dismiss = useApp((s) => s.dismissAi);
+  const run = useApp((s) => s.run);
+  const editorSql = useApp((s) => s.sql);
   const text = ai.explanation ?? ai.notice?.text;
   if (!text) return null;
   const isError = !ai.explanation && ai.notice?.tone === 'error';
@@ -61,11 +66,26 @@ export function AiNotice() {
         isError ? 'border-l-danger bg-danger-wash' : 'border-l-accent bg-accent-wash'
       }`}
     >
-      <span className="label mt-0.5 shrink-0">AI</span>
+      <span className="label mt-0.5 flex shrink-0 items-center gap-1.5">
+        <AiIcon />
+        AI
+      </span>
       <p className="min-w-0 flex-1 whitespace-pre-wrap">
         {ai.explanation && <span className="font-semibold">What this query does: </span>}
         {text}
       </p>
+      {!ai.explanation && ai.notice?.sql !== undefined && ai.notice.sql === editorSql && (
+        <button
+          type="button"
+          className="btn shrink-0"
+          onClick={() => {
+            dismiss();
+            void run();
+          }}
+        >
+          Run it
+        </button>
+      )}
       <button type="button" aria-label="Dismiss" className="px-1 text-muted hover:text-ink" onClick={dismiss}>
         ✕
       </button>

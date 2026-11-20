@@ -47,10 +47,14 @@ test('asking in English sends only the schema, and never runs the SQL by itself'
   await loadFixtures(page);
   await ask(page, 'total sales per city');
 
-  await expect(page.getByTestId('ai-notice')).toContainText('Review it, then press Run');
+  await expect(page.getByTestId('ai-notice')).toContainText('AI wrote SQL for “total sales per city” and put it in the editor above');
   await expect(page.locator('.cm-content')).toContainText('GROUP BY c.city');
   // Not run: the earlier result is still showing.
   await expect(page.getByTestId('result-summary')).toContainText('5 rows');
+  // It runs only when the visitor chooses to.
+  await page.getByRole('button', { name: 'Run it' }).click();
+  await expect(page.getByTestId('result-summary')).toContainText('3 rows');
+  await expect(page.getByTestId('ai-notice')).toHaveCount(0);
 
   // The request holds the question and the schema, and no cell value or file name.
   expect(requests).toHaveLength(1);
@@ -119,6 +123,11 @@ test('fixing an error sends the error text with data values removed', async ({ p
   await page.getByRole('button', { name: 'Fix with AI' }).click();
   await expect(page.getByTestId('ai-notice')).toContainText('suggested a fix');
   await expect(editor).toHaveText('SELECT length(name) AS name_length FROM customers');
+  // Once the visitor edits the SQL, "Run it" no longer refers to the AI's answer, so it goes away.
+  await expect(page.getByRole('button', { name: 'Run it' })).toBeVisible();
+  await editor.press('End');
+  await editor.pressSequentially(' LIMIT 1');
+  await expect(page.getByRole('button', { name: 'Run it' })).toHaveCount(0);
 
   const sent = JSON.parse(requests[0]) as AiRequest;
   expect(sent.task).toBe('fix');

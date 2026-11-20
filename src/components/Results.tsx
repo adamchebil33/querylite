@@ -3,6 +3,7 @@ import { MAX_RESULT_ROWS } from '../db/engine';
 import { parseSqlError } from '../lib/errors';
 import { formatCount, formatDuration } from '../lib/format';
 import { useApp } from '../state/store';
+import { AiIcon } from './AiIcon';
 import { ChartPanel, defaultChart } from './ChartPanel';
 import { ExportButtons } from './ExportButtons';
 import { ResultTable } from './ResultTable';
@@ -81,6 +82,7 @@ function QueryError({ message }: { message: string }) {
           title="Sends your SQL, the error text (with values removed) and your column names. Never your data."
           className="btn mt-3"
         >
+          <AiIcon />
           {fixing ? 'Asking AI…' : 'Fix with AI'}
         </button>
       </div>

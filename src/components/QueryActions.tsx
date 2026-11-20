@@ -5,6 +5,7 @@ import { tablesMentioned } from '../lib/sql';
 import { SAMPLES } from '../samples';
 import { useLibrary } from '../state/library';
 import { useApp } from '../state/store';
+import { AiIcon } from './AiIcon';
 
 const buttonClass = 'btn';
 
@@ -125,6 +126,7 @@ function ExplainButton({ sql }: { sql: string }) {
       title="Ask AI to explain this query in plain English. Only the SQL and your column names are sent."
       onClick={() => void explain()}
     >
+      <AiIcon />
       {busy ? 'Explaining…' : 'Explain'}
     </button>
   );
