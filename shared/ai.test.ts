@@ -4,6 +4,7 @@ import {
   buildAiRequest,
   buildMessages,
   extractSql,
+  readGenerateReply,
   LIMITS,
   parseAiRequest,
   redactError,
@@ -146,5 +147,41 @@ describe('prompts and replies', () => {
     expect(extractSql('SELECT 1')).toBe('SELECT 1');
     expect(extractSql('```sql\nSELECT 1;\n```')).toBe('SELECT 1;');
     expect(extractSql('Here you go:\n```\nSELECT 2\n```\nHope it helps')).toBe('SELECT 2');
+  });
+
+  it('gives the extra rules for new SQL to generate only, never to fix', () => {
+    const system = (task: 'generate' | 'fix') =>
+      buildMessages(buildAiRequest(task, tables, { question: 'q', sql: 'SELECT 1', error: 'e' }))[0].content;
+    expect(system('generate')).toContain('NO_SQL:');
+    expect(system('generate')).toContain('LEFT JOIN');
+    expect(system('fix')).not.toContain('NO_SQL');
+    expect(system('fix')).not.toContain('LEFT JOIN');
+  });
+
+  it('quotes names that SQL would otherwise misread, and leaves plain ones alone', () => {
+    const odd = ['score %', 'Full Name', 'order', '2024', 'café', 'a"b', 'plain_1'].map((name) => ({ name, type: 'INTEGER' }));
+    const [, user] = buildMessages(buildAiRequest('generate', [{ name: 'my table', columns: odd }], { question: 'q' }));
+    expect(user.content).toContain(
+      '"my table"("score %" INTEGER, "Full Name" INTEGER, "order" INTEGER, "2024" INTEGER, "café" INTEGER, "a""b" INTEGER, plain_1 INTEGER)',
+    );
+  });
+
+  it('never names sample tables in the prompt, so they cannot be invented for other data', () => {
+    for (const { content } of buildMessages(buildAiRequest('generate', tables, { question: 'q' }))) {
+      expect(content).not.toMatch(/zone|trips|emissions/i);
+    }
+  });
+
+  it('reads a decline whatever its punctuation', () => {
+    for (const reply of ['NO_SQL: No weather.', 'no_sql No weather.', '-- NO_SQL: No weather.', '`NO_SQL` - No weather.', 'NO_SQL: No weather.\nSELECT 1']) {
+      expect(readGenerateReply(reply)).toEqual({ kind: 'none', reason: 'No weather.' });
+    }
+    expect(readGenerateReply('NO_SQL')).toEqual({ kind: 'none', reason: 'It cannot be answered with the loaded tables.' });
+  });
+
+  it('never mistakes SQL for a decline', () => {
+    for (const sql of ['SELECT 1', '-- note\nSELECT no_sql FROM t', 'WITH no_sql AS (SELECT 1) SELECT * FROM no_sql', "SELECT 'NO_SQL: x'"]) {
+      expect(readGenerateReply(sql)).toEqual({ kind: 'sql', sql });
+    }
   });
 });

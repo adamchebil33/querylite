@@ -169,7 +169,8 @@ function TablesTab() {
   );
 }
 
-export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
+/** On phones it fills the screen, and is hidden while the query is showing. */
+export function Sidebar({ onFiles, hiddenOnPhone }: { onFiles: (files: File[]) => void; hiddenOnPhone: boolean }) {
   const [tab, setTab] = useState<'tables' | 'queries'>('tables');
   const tabClass = (active: boolean) =>
     `label -mb-px border-b-2 px-0.5 py-2.5 ${
@@ -177,7 +178,9 @@ export function Sidebar({ onFiles }: { onFiles: (files: File[]) => void }) {
     }`;
 
   return (
-    <aside className="flex w-72 shrink-0 flex-col border-r border-rule bg-panel">
+    <aside className={`flex w-72 shrink-0 flex-col border-r border-rule bg-panel compact:w-full compact:border-r-0 ${
+        hiddenOnPhone ? 'compact:hidden' : ''
+      }`}>
       <div className="flex items-center justify-between border-b border-rule px-3">
         <div role="tablist" className="flex gap-4">
           <button type="button" role="tab" aria-selected={tab === 'tables'} className={tabClass(tab === 'tables')} onClick={() => setTab('tables')}>

@@ -11,6 +11,12 @@
 @import '@fontsource/ibm-plex-serif/latin-400-italic.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
+/* Phones, upright or sideways. */
+@custom-variant compact {
+  @media (max-width: 47.99rem), (max-height: 30rem) {
+    @slot;
+  }
+}
 
 /*
  * Design tokens. The look is a paper ledger: warm paper, ink, hairline
@@ -116,14 +122,9 @@ body,
   height: 100%;
 }
 
-/* Match the page background before the app starts, to avoid a flash. */
+/* Match the page background before the app starts, to avoid a flash. Light is the default. */
 html {
   background: #f6f4ee;
-}
-@media (prefers-color-scheme: dark) {
-  html {
-    background: #121210;
-  }
 }
 html.dark {
   background: #121210;
@@ -195,5 +196,13 @@ body {
   }
   .link:hover {
     color: var(--ink);
+  }
+}
+
+/* iOS zooms the page when a field under 16px gets focus. */
+@media (max-width: 47.99rem), (max-height: 30rem) {
+  .cm-editor .cm-content,
+  input {
+    font-size: 16px !important;
   }
 }

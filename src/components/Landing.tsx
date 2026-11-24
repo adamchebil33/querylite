@@ -7,13 +7,13 @@ import { PrivacyBadge } from './PrivacyBadge';
 import { ThemeToggle, Wordmark } from './ThemeToggle';
 
 /**
- * Figures from the /bench page, measured in Chrome 158 on a 4-thread Linux
- * laptop on 2026-11-19 (DuckDB v1.5.4). Update them from a fresh run if the engine changes.
+ * Figures from the /bench page, measured in Chrome 158 on a 6-thread Linux
+ * laptop on 2026-11-21 (DuckDB v1.5.4). Update them from a fresh run if the engine changes.
  */
 const MEASURED = [
-  { value: '24 ms', label: 'to join and group 2.87 million rows' },
-  { value: '2.2 ms', label: 'to count 2.87 million rows' },
-  { value: '0.5 s', label: 'to parse a 59 MB CSV with a million rows' },
+  { value: '28 ms', label: 'to join and group 2.87 million rows' },
+  { value: '1.7 ms', label: 'to count 2.87 million rows' },
+  { value: '0.7 s', label: 'to parse a 59 MB CSV with a million rows' },
 ];
 
 const HOW_IT_WORKS = [
@@ -42,10 +42,10 @@ export function Landing({ onFiles }: { onFiles: (files: File[]) => void }) {
     <div className="h-full overflow-y-auto bg-paper text-ink">
       <header className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-4">
         <Wordmark name={APP_NAME} />
-        <div className="ml-auto flex items-center gap-5">
+        <div className="ml-auto flex shrink-0 items-center gap-5 max-sm:gap-3">
           <PrivacyBadge />
           <ThemeToggle />
-          <button type="button" className="btn" onClick={() => navigate(APP_PATH)}>
+          <button type="button" className="btn max-sm:hidden" onClick={() => navigate(APP_PATH)}>
             Open the editor
           </button>
         </div>
@@ -106,7 +106,7 @@ export function Landing({ onFiles }: { onFiles: (files: File[]) => void }) {
             ))}
           </dl>
           <p className="mt-3 border-t border-rule pt-3 font-mono text-[11px] text-faint">
-            Chrome on a 4-thread Linux laptop.{' '}
+            Chrome on a 6-thread Linux laptop.{' '}
             <a href="/bench" className="link">
               Run the benchmark on your device
             </a>

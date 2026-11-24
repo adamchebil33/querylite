@@ -13,7 +13,7 @@ import {
   type QueryResult,
   type TableInfo,
 } from '../db/engine';
-import type { AiTask } from '../../shared/ai';
+import { readGenerateReply, type AiTask } from '../../shared/ai';
 import { AiError, askAi } from '../lib/aiClient';
 import { fileKind, quoteIdent, tableNameFor } from '../lib/files';
 import { tablesMentioned } from '../lib/sql';
@@ -118,7 +118,13 @@ async function offerAiSql(task: 'generate' | 'fix', input: { question?: string; 
   const done = (notice: AiState['notice']) => set({ ai: { busy: null, notice, explanation: null } });
   set({ ai: { busy: task, notice: null, explanation: null } });
   try {
-    const sql = await askAi(task, get().tables, input);
+    const reply = await askAi(task, get().tables, input);
+    const answer = task === 'generate' ? readGenerateReply(reply) : { kind: 'sql' as const, sql: reply };
+    if (answer.kind === 'none') {
+      done({ tone: 'error', text: `AI did not write SQL for that: ${answer.reason}` });
+      return;
+    }
+    const sql = answer.sql;
     const check = await checkReadOnly(sql);
     if (!check.ok) {
       done({

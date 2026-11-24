@@ -7,8 +7,7 @@ const THEME_KEY = 'querylite.theme';
 
 function initialTheme(): Theme {
   const stored = readJson<Theme | null>(THEME_KEY, null);
-  if (stored === 'light' || stored === 'dark') return stored;
-  return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return stored === 'dark' ? 'dark' : 'light';
 }
 
 function apply(theme: Theme) {
@@ -16,7 +15,7 @@ function apply(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
 }
 
-/** Follows the system setting until the visitor picks a theme themselves. */
+/** Light by default, whatever the system setting; remembers the visitor's own choice. */
 export const useTheme = create<{ theme: Theme; toggle: () => void }>((set, get) => {
   const theme = initialTheme();
   apply(theme);

@@ -33,7 +33,7 @@ async function loadFixtures(page: Page) {
 }
 
 async function ask(page: Page, question: string) {
-  await page.getByLabel('Ask a question in plain English').fill(question);
+  await page.getByLabel('Describe the data you want').fill(question);
   await page.getByRole('button', { name: 'Write SQL' }).click();
 }
 
@@ -174,4 +174,14 @@ test('the real endpoint fails gracefully where no AI is available', async ({ pag
   await ask(page, 'total sales per city');
   await expect(page.getByTestId('ai-notice')).toContainText('AI is unavailable right now');
   await expect(page.getByTestId('result-summary')).toContainText('5 rows');
+});
+
+test('a question SQL cannot answer gets a reason, not an unrelated query', async ({ page }) => {
+  await mockAi(page, () => ({ body: { ok: true, text: 'NO_SQL: The tables have no weather data.' } }));
+  await loadFixtures(page);
+  const before = await page.locator('.cm-content').innerText();
+  await ask(page, 'will it rain tomorrow');
+
+  await expect(page.getByTestId('ai-notice')).toContainText('AI did not write SQL for that: The tables have no weather data.');
+  await expect(page.locator('.cm-content')).toHaveText(before);
 });

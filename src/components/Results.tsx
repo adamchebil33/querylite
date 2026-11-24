@@ -20,7 +20,7 @@ export function ResultSummary() {
   }
   if (query.status !== 'done') return null;
   return (
-    <span className="flex items-center gap-4">
+    <span className="flex flex-wrap items-center gap-x-4 gap-y-1">
       <ExportButtons sql={query.sql} />
       <ResultSummaryText />
     </span>

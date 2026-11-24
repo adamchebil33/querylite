@@ -80,10 +80,12 @@ test('dark mode can be toggled and is remembered', async ({ page }) => {
   await expect(html).not.toHaveClass(/dark/);
 });
 
-test('follows the system color scheme by default', async ({ page }) => {
+test('opens in light mode by default, even when the system prefers dark', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.goto('/app');
-  await expect(page.locator('html')).toHaveClass(/dark/);
+  await expect(page.locator('html')).not.toHaveClass(/dark/);
 });
 
 test('the privacy badge explains the design', async ({ page }) => {

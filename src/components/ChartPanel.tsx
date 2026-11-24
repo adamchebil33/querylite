@@ -260,6 +260,10 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
           labelArrow: 'none' as const,
         };
         const numericX = { tickFormat: tickFormatter(maxOf(['x'])), labelArrow: 'none' as const };
+        // On a narrow chart, label every second (third...) bar so the labels don't run together.
+        const labelWidth = Math.max(0, ...rows.map((row) => String(row.x).length)) * 7.5 + 4;
+        const bandWidth = (size.width - marginLeft - 20) / Math.max(1, rows.length);
+        const labelEvery = Math.max(1, Math.ceil(labelWidth / bandWidth));
         const svg = P.plot({
           width: size.width,
           height,
@@ -277,7 +281,7 @@ function Plot({ table, spec }: { table: Table; spec: ChartSpec }) {
           x: horizontalBars
             ? { ...valueAxis, label: first }
             : spec.type === 'bar'
-              ? { label: xName, type: 'band' as const, domain: rows.map((r) => r.x as string) }
+              ? { label: xName, type: 'band' as const, domain: rows.map((r) => r.x as string), ticks: rows.filter((_, i) => i % labelEvery === 0).map((r) => r.x as string) }
               : xKind === 'time'
                 ? { label: null }
                 : { ...numericX, label: xName },

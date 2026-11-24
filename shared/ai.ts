@@ -149,18 +149,53 @@ export interface ChatMessage {
   content: string;
 }
 
+// DuckDB's reserved words: a column with one of these names only works in quotes.
+const RESERVED = new Set(
+  `all analyse analyze and any array as asc asymmetric both case cast check collate column constraint create default
+  deferrable desc describe distinct do else end except false fetch for foreign from grant group having in initially
+  intersect into lambda lateral leading limit not null offset on only or order pivot pivot_longer pivot_wider placing
+  primary qualify references returning select show some summarize symmetric table then to trailing true union unique
+  unpivot using variadic when where window with`.split(/\s+/),
+);
+
+/** A name as it must be written in SQL, so the model can copy it as it stands. */
+function sqlName(name: string): string {
+  const plain = /^[a-z_][a-z0-9_]*$/i.test(name) && !RESERVED.has(name.toLowerCase());
+  return plain ? name : `"${name.replaceAll('"', '""')}"`;
+}
+
 function describeSchema(schema: AiTable[]): string {
   if (schema.length === 0) return '(no tables loaded)';
   return schema
-    .map((t) => `${t.name}(${t.columns.map((c) => `${c.name} ${c.type}`).join(', ')})`)
+    .map((t) => `${sqlName(t.name)}(${t.columns.map((c) => `${sqlName(c.name)} ${c.type}`).join(', ')})`)
     .join('\n');
 }
 
 const SQL_RULES = `Rules:
 - Reply with exactly one DuckDB SQL query and nothing else: no explanation, no markdown.
 - It must be a single read-only SELECT statement (WITH ... SELECT is fine). Never modify data.
-- Use only the tables and columns listed. Put double quotes around names that contain spaces or symbols.
+- Use only the tables and columns listed, and copy their names exactly. Where a listed name is in double quotes, keep the quotes and everything inside them, including spaces and symbols.
 - Prefer clear column aliases, and add ORDER BY and LIMIT when the question asks for a "top" or "most".`;
+
+/** Extra guidance for writing new SQL. Not used for fixes, which should change as little as possible. */
+const GENERATE_RULES = `- Count rows with COUNT(*) and distinct values with COUNT(DISTINCT column).
+- Before showing a column ending in _id, look for a listed table that has a matching id column and a name. If there is one, LEFT JOIN it (so no rows are lost) and show the name. When grouping, GROUP BY both the id and the name, so different ids that share a name are not merged. If no listed table has the name, show the id.
+Almost every question deserves a query. Only if no listed column could help answer it at all (for example a weather question when no table has weather columns), reply with NO_SQL: followed by one short sentence saying why.
+Never refuse because you cannot see the data: assume it may contain the value the question names, and filter for it. Comparisons over time are answered by grouping or filtering on a year or date column.`;
+
+export type GenerateReply = { kind: 'sql'; sql: string } | { kind: 'none'; reason: string };
+
+/**
+ * Reads the model's answer to a "generate" request: SQL, or the reason it wrote none.
+ * Models vary the punctuation ("NO_SQL - why", "-- NO_SQL: why"), and no SELECT starts this way.
+ */
+export function readGenerateReply(reply: string): GenerateReply {
+  const text = reply.trim();
+  const declined = /^[\s`*-]*NO_SQL\b[\s:.`*\u2013\u2014-]*([^\n]*)/i.exec(text);
+  if (!declined) return { kind: 'sql', sql: text };
+  const reason = declined[1].replace(/[`*]+$/, '').trim().slice(0, 300);
+  return { kind: 'none', reason: reason || 'It cannot be answered with the loaded tables.' };
+}
 
 /** Turns a validated request into the prompt for the model. */
 export function buildMessages(request: AiRequest): ChatMessage[] {
@@ -168,7 +203,7 @@ export function buildMessages(request: AiRequest): ChatMessage[] {
   switch (request.task) {
     case 'generate':
       return [
-        { role: 'system', content: `You translate questions into DuckDB SQL.\n${SQL_RULES}` },
+        { role: 'system', content: `You translate questions into DuckDB SQL.\n${SQL_RULES}\n${GENERATE_RULES}` },
         { role: 'user', content: `${tables}\n\nQuestion: ${request.question}` },
       ];
     case 'fix':

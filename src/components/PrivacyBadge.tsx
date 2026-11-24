@@ -34,7 +34,7 @@ export function PrivacyBadge() {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 font-mono text-[11px] text-ink underline decoration-rule decoration-1 underline-offset-4 hover:decoration-ink"
+        className="flex items-center gap-1.5 font-mono text-[11px] whitespace-nowrap text-ink underline decoration-rule decoration-1 underline-offset-4 hover:decoration-ink"
       >
         <LockIcon />
         Nothing is uploaded
@@ -43,7 +43,7 @@ export function PrivacyBadge() {
         <div
           role="dialog"
           aria-label="How your data stays private"
-          className="absolute top-full right-0 z-40 mt-2 w-[26rem] max-w-[90vw] border border-ink bg-panel p-5 text-[13px] leading-relaxed"
+          className="absolute top-full right-0 z-40 mt-2 w-[26rem] max-w-[90vw] compact:fixed compact:inset-x-3 compact:top-12 compact:mt-0 compact:max-h-[80vh] compact:w-auto compact:max-w-none compact:overflow-y-auto border border-ink bg-panel p-5 text-[13px] leading-relaxed"
         >
           <h2 className="font-serif text-xl">Your data stays on this device</h2>
           <ol className="mt-3 space-y-2.5">

@@ -14,21 +14,21 @@ Querylite is a SQL playground where the database runs inside the browser tab. Dr
 
 Run on the built-in [`/bench`](src/bench/benchmark.ts) page, which anyone can re-run on their own device.
 
-Measured on Chrome 158, Linux, 4 CPU threads, 8+ GB RAM, 2026-11-19, DuckDB v1.5.4 (WebAssembly, single thread).
+Measured on Chrome 158, Linux, 6 CPU threads, 8+ GB RAM, 2026-11-21, DuckDB v1.5.4 (WebAssembly, single thread).
 
 | Query over 2,869,937 rows | Median | Fastest |
 | --- | ---: | ---: |
-| Count all rows | 2.2 ms | 1.9 ms |
-| Filter and aggregate | 18 ms | 16 ms |
-| Group by hour (24 groups) | 32 ms | 30 ms |
-| Group by route (tens of thousands of groups) | 41 ms | 34 ms |
-| Join to zones and group by borough | 24 ms | 23 ms |
-| Median and 95th percentile per payment type | 137 ms | 136 ms |
-| Top 100 by tip (sort) | 41 ms | 37 ms |
-| Daily totals with 7-day moving average (window) | 21 ms | 20 ms |
+| Count all rows | 1.7 ms | 1.5 ms |
+| Filter and aggregate | 20 ms | 18 ms |
+| Group by hour (24 groups) | 39 ms | 38 ms |
+| Group by route (tens of thousands of groups) | 59 ms | 59 ms |
+| Join to zones and group by borough | 28 ms | 27 ms |
+| Median and 95th percentile per payment type | 184 ms | 183 ms |
+| Top 100 by tip (sort) | 53 ms | 52 ms |
+| Daily totals with 7-day moving average (window) | 24 ms | 24 ms |
 
-- Download and load 2,869,937 rows (18 MB Parquet): 1.0 s
-- Parse a 59 MB CSV with 1,000,000 rows: 0.5 s
+- Download and load 2,869,937 rows (18 MB Parquet): 3.0 s
+- Parse a 59 MB CSV with 1,000,000 rows: 0.7 s
 
 Each query runs once to warm up, then five times; the table shows the median and the fastest run.
 
@@ -36,14 +36,14 @@ Each query runs once to warm up, then five times; the table shows the median and
 
 - **Files:** CSV, TSV, JSON, Parquet and Excel (.xlsx). Drop several at once; each becomes a table, and joins across them work.
 - **Editor:** SQL highlighting, autocomplete for table and column names, Ctrl/Cmd+Enter to run, and a Cancel button for long queries.
-- **Results:** a virtualized table that scrolls 100,000 rows smoothly, click-to-sort, and a summary like `10 rows · 32 ms over 2,870,202 rows`.
+- **Results:** a virtualized table that scrolls 100,000 rows smoothly, click-to-sort, and a summary like `10 rows · 28 ms over 2,870,202 rows`.
 - **Charts:** a bar, line or scatter chart is suggested from the shape of the result, with controls to change it.
 - **Export:** the full result as CSV or Parquet, even when the on-screen table is cut off.
 - **Plain English:** describe what you want and AI drafts the SQL. It is shown in the editor for you to review; it is never run automatically.
 - **Explain and fix:** one click to explain a query, or to suggest a fix for an error.
 - **Share:** a link that carries the SQL and the name of a sample dataset, never your data.
 - **History and saved queries,** kept in your browser only.
-- **Dark mode,** following the system setting.
+- **Light and dark mode,** opening in light; your choice is remembered.
 
 ## How it works
 

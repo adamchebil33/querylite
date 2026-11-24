@@ -98,7 +98,7 @@ function ShareButton({ sql }: { sql: string }) {
         {copied ? 'Link copied' : 'Share'}
       </button>
       {link && (
-        <span className="absolute top-full left-0 z-30 mt-1 flex w-80 items-center gap-1 border border-ink bg-panel p-2">
+        <span className="absolute top-full left-0 z-30 mt-1 flex w-80 items-center gap-1 compact:fixed compact:inset-x-3 compact:top-auto compact:bottom-3 compact:w-auto border border-ink bg-panel p-2">
           <input
             readOnly
             value={link}

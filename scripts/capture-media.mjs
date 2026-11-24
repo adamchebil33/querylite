@@ -16,6 +16,8 @@ for (const scheme of ['light', 'dark']) {
     colorScheme: scheme,
     deviceScaleFactor: 1,
   });
+  // The app opens in light mode whatever the system says, so pick the theme the way a visitor's choice is stored.
+  await page.addInitScript((theme) => localStorage.setItem('querylite.theme', JSON.stringify(theme)), scheme);
   await page.goto(`${base}/app`);
   await page.getByRole('button', { name: 'Load sample NYC taxi trips' }).click();
   await page.getByTestId('result-summary').waitFor({ timeout: 60_000 });
