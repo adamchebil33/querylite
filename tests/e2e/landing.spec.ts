@@ -50,3 +50,42 @@ test('the empty editor is uncluttered', async ({ page }) => {
   await expect(page.getByText('No data yet.')).toBeVisible();
   await expect(page.getByRole('heading', { name: /Query millions of rows/ })).toHaveCount(0);
 });
+
+test('the landing page shows the demo video', async ({ page, request }) => {
+  await page.goto('/');
+  const video = page.getByTestId('landing-video');
+  await expect(video).toBeVisible();
+  // The poster is shown until the visitor presses play.
+  await expect
+    .poll(() => page.evaluate(async () => {
+      const img = new Image();
+      img.src = document.querySelector('video')!.poster;
+      await img.decode();
+      return img.naturalWidth;
+    }))
+    .toBe(1920);
+  const file = await request.get('/media/demo.mp4');
+  expect(file.status()).toBe(200);
+  expect(file.headers()['content-type']).toContain('video/mp4');
+
+  // It previews silently on a loop; "Turn on sound" unmutes it and shows the controls.
+  const state = () =>
+    video.evaluate((el: HTMLVideoElement) => ({ muted: el.muted, loop: el.loop, controls: el.controls }));
+  expect(await state()).toEqual({ muted: true, loop: true, controls: false });
+  await page.getByRole('button', { name: 'Turn on sound' }).click();
+  await expect(page.getByRole('button', { name: 'Turn on sound' })).toHaveCount(0);
+  expect(await state()).toEqual({ muted: false, loop: false, controls: true });
+});
+
+test('with reduced motion the demo video waits for the visitor', async ({ browser }) => {
+  const page = await browser.newPage({ reducedMotion: 'reduce' });
+  await page.goto('/');
+  const video = page.getByTestId('landing-video');
+  await expect(video).toBeVisible();
+  expect(await video.evaluate((el: HTMLVideoElement) => ({ controls: el.controls, paused: el.paused }))).toEqual({
+    controls: true,
+    paused: true,
+  });
+  await expect(page.getByRole('button', { name: 'Turn on sound' })).toHaveCount(0);
+  await page.close();
+});

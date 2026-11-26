@@ -2,6 +2,7 @@ import { APP_NAME, REPO_URL } from '../config';
 import { APP_PATH, navigate } from '../lib/router';
 import { SAMPLES } from '../samples';
 import { useApp } from '../state/store';
+import { DemoVideo } from './DemoVideo';
 import { FilePickerButton } from './DropZone';
 import { PrivacyBadge } from './PrivacyBadge';
 import { ThemeToggle, Wordmark } from './ThemeToggle';
@@ -78,21 +79,7 @@ export function Landing({ onFiles }: { onFiles: (files: File[]) => void }) {
         </section>
 
         <figure className="mt-14 border border-ink">
-          <img
-            src="/media/workspace-light.png"
-            alt="The editor showing a query over 2.9 million taxi trips with a results table and a bar chart"
-            width={1380}
-            height={820}
-            className="block h-auto w-full dark:hidden"
-          />
-          <img
-            src="/media/workspace-dark.png"
-            alt=""
-            aria-hidden
-            width={1380}
-            height={820}
-            className="hidden h-auto w-full dark:block"
-          />
+          <DemoVideo />
         </figure>
 
         <section className="mt-16">

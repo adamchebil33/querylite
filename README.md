@@ -4,11 +4,15 @@
 
 [![CI](https://github.com/adamchebil33/querylite/actions/workflows/ci.yml/badge.svg)](https://github.com/adamchebil33/querylite/actions/workflows/ci.yml)
 
-**Live demo:** <!-- LIVE_DEMO_URL -->_coming soon_<!-- /LIVE_DEMO_URL -->. Click **Try it on 2.9 million taxi trips**: no file, no sign-up.
+**Live demo:** https://querylite.adamchebil.workers.dev. Click **Try it on 2.9 million taxi trips**: no file, no sign-up.
 
-![Loading 2.9 million rows and querying them in milliseconds](docs/demo.gif)
+https://github.com/user-attachments/assets/cd2e3fc5-1cb8-49c6-b7bf-f55815236f4c
 
 Querylite is a SQL playground where the database runs inside the browser tab. Drag in a CSV, TSV, JSON, Parquet or Excel file, ask questions in SQL or in plain English, and get a results table and a chart. It handles files far too big for a spreadsheet, and private data (bank exports, company sales) never leaves your computer because there is no server to send it to.
+
+The real app, unedited:
+
+![Loading 2.9 million rows and querying them in milliseconds](docs/demo.gif)
 
 ## Measured performance
 
