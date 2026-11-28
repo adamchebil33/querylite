@@ -36,18 +36,24 @@ Measured on Chrome 158, Linux, 6 CPU threads, 8+ GB RAM, 2026-11-21, DuckDB v1.5
 
 Each query runs once to warm up, then five times; the table shows the median and the fastest run.
 
+## Highlights
+
+- **Private by design, and enforced.** Your files are never uploaded: there is no server to receive them. The browser's own security policy blocks connections to any other site, so even a bug or a compromised dependency could not send your data anywhere.
+- **AI that never sees your data.** Ask a question in plain English and AI drafts the SQL. Only table and column names are sent, never rows or values. AI-written SQL is accepted only if it is a single read-only `SELECT`, and it never runs until you review it.
+- **Smooth with millions of rows.** The database runs off the main thread and the table only draws the rows on screen, so the page stays responsive while a million-row file loads. A test measures this.
+- **Tested on every push.** Unit and browser tests run in CI and cover every file format, joins across files, sorting, charts, exports, share links, the benchmark page, responsiveness during large loads, that nothing is uploaded, and that AI requests never contain data values.
+- **Runs for $0.** The site, the sample datasets and the AI feature all run on Cloudflare's free plan. If the AI is down or its free daily allowance runs out, the app says so and everything else keeps working.
+
 ## Features
 
 - **Files:** CSV, TSV, JSON, Parquet and Excel (.xlsx). Drop several at once; each becomes a table, and joins across them work.
 - **Editor:** SQL highlighting, autocomplete for table and column names, Ctrl/Cmd+Enter to run, and a Cancel button for long queries.
-- **Results:** a virtualized table that scrolls 100,000 rows smoothly, click-to-sort, and a summary like `10 rows · 28 ms over 2,870,202 rows`.
+- **Results:** a table that scrolls 100,000 rows smoothly, click-to-sort, and a summary like `10 rows · 28 ms over 2,870,202 rows`.
 - **Charts:** a bar, line or scatter chart is suggested from the shape of the result, with controls to change it.
+- **AI:** describe what you want in plain English, explain a query, or fix an error in one click.
 - **Export:** the full result as CSV or Parquet, even when the on-screen table is cut off.
-- **Plain English:** describe what you want and AI drafts the SQL. It is shown in the editor for you to review; it is never run automatically.
-- **Explain and fix:** one click to explain a query, or to suggest a fix for an error.
 - **Share:** a link that carries the SQL and the name of a sample dataset, never your data.
-- **History and saved queries,** kept in your browser only.
-- **Light and dark mode,** opening in light; your choice is remembered.
+- **History and saved queries,** kept in your browser only. Light and dark mode, and a layout that works on phones.
 
 ## How it works
 
@@ -73,33 +79,25 @@ flowchart LR
   UI -- "question + column names only" --> API
 ```
 
-**DuckDB compiled to WebAssembly.** [DuckDB](https://duckdb.org) is a full analytical SQL database (joins, window functions, Parquet, the lot). Its WebAssembly build runs it inside the page, so queries execute on your CPU with no server round trip.
+**A database inside the page.** [DuckDB](https://duckdb.org), a full analytical SQL database, is compiled to WebAssembly, so queries run on your own CPU with no server round trip.
 
-**Off the main thread.** The database lives in a Web Worker. Files are handed to it as browser file handles and read there in chunks, so nothing heavy ever runs on the UI thread. A test loads a million-row CSV while measuring the gap between animation frames to prove the page stays responsive.
+**Off the main thread.** The database lives in a Web Worker and reads files there in chunks, so heavy work never blocks the interface.
 
-**Streaming results.** Results come back as Apache Arrow record batches. The app stops reading after 100,000 rows for display, and the table only renders the rows in view, reading cells straight from the Arrow columns on demand. Sorting a cut-off result re-runs the query with an `ORDER BY`, so the database sorts the whole result rather than the visible part.
+**Streaming results.** Results arrive as Apache Arrow batches. The app keeps up to 100,000 rows for display and the table only draws the rows in view; exports re-run the query so they are always complete.
 
-**Privacy by design, and enforced.**
-- Your files are never uploaded. There is no upload endpoint to send them to.
-- A Content-Security-Policy ([`public/_headers`](public/_headers)) makes the browser itself refuse connections to anything except this site and the two hosts the database engine is downloaded from. A bug or a compromised dependency could not send data elsewhere.
-- Tests assert that loading files contacts no other host and sends no request body, and that a `POST` to an outside site is blocked.
-
-**AI that never sees your data.** The plain-English feature sends your question and the *schema*: table names, column names and column types. It never sends rows, cell values, file names or file contents.
-- The request is built from a whitelist of fields ([`shared/ai.ts`](shared/ai.ts)), and the Worker validates it again and drops anything unexpected.
-- Database error messages can quote a cell value, so values are masked before an error is sent for fixing.
-- AI-written SQL is parsed by DuckDB and accepted only if it is exactly one read-only `SELECT`. `DROP`, `DELETE`, `COPY` and multi-statement answers are discarded.
-- A unit test and a browser test check the outgoing request for every value in the test files.
-- When you use Explain or Fix, the SQL you typed is sent as written.
-
-The AI runs on Cloudflare Workers AI behind a small Worker that rate-limits each visitor. If it is down, rate-limited or the free daily allowance is used up, the app says so and everything else keeps working.
-
-**Sharing queries without sharing data.** A share link is `…/app#data=taxi&sql=…`. It holds the SQL and the id of a built-in sample dataset. Everything after `#` stays in the browser and is never sent to a server.
+**A small, guarded AI endpoint.** A Cloudflare Worker forwards the question and the table schema to Workers AI, with a per-visitor rate limit. The browser builds the request from an allow-list of fields, the Worker checks it again, and DuckDB parses every AI answer before it reaches the editor.
 
 ## Tech stack
 
-React, TypeScript and Vite · DuckDB-WASM · Apache Arrow · CodeMirror 6 · Observable Plot · TanStack Virtual · Tailwind CSS · Cloudflare Workers and Workers AI · Vitest and Playwright.
+| Area | Tools |
+| --- | --- |
+| Frontend | React, TypeScript, Vite, Tailwind CSS |
+| Database | DuckDB-WASM, Apache Arrow |
+| Editor and charts | CodeMirror 6, Observable Plot, TanStack Virtual |
+| Hosting and AI | Cloudflare Workers, Workers AI |
+| Testing | Vitest, Playwright |
 
-## Run it locally
+## Getting started
 
 Requires Node.js 22 or newer.
 
@@ -110,50 +108,41 @@ npm install
 npm run dev
 ```
 
-Open the printed URL. No account or configuration is needed. Locally the AI buttons report that AI is unavailable, because the model only runs on Cloudflare's network; everything else works. To use the real model locally, run `npx wrangler login` once and then `npm run dev:ai`.
+Open the printed URL; no account or configuration is needed. The AI buttons report that AI is unavailable locally, because the model only runs on Cloudflare's network. To use it, run `npx wrangler login` once and then `npm run dev:ai`.
 
-## Test
+To deploy, `npm run deploy` builds the app and publishes the site and the AI endpoint together as one Cloudflare Worker. Its settings, such as the AI model and the rate limit (5 AI requests per minute per visitor), are in [`wrangler.jsonc`](wrangler.jsonc).
+
+## Tests
 
 ```bash
-npm test                  # unit tests (Vitest)
+npm test                          # unit tests (Vitest)
 npx playwright install chromium   # once
-npm run test:e2e          # browser tests against the dev server
-npm run test:e2e:preview  # browser tests against the production build, with its security headers
+npm run test:e2e                  # browser tests against the dev server
+npm run test:e2e:preview          # browser tests against the production build
 ```
 
-The browser tests start the app themselves and need internet access, because the database engine is downloaded from a CDN.
-
-What they cover: loading every file format, joins across files, value formatting, sorting, charts, exports, share links, the benchmark page, that the page stays responsive during a large load, that nothing is uploaded, and that AI requests never contain data values.
-
-## Deployment
-
-The site and the AI endpoint run on Cloudflare's free plan as a single Worker: static assets plus `POST /api/ai`. `npm run deploy` builds the app and publishes it with Wrangler. The configuration is in [`wrangler.jsonc`](wrangler.jsonc): the AI model, and a rate limit of 5 AI requests per minute per visitor. When the free daily AI allowance runs out, AI requests fail and the app says so; nothing is billed.
+The browser tests start the app themselves and need internet access, because the database engine is downloaded from a CDN. CI runs the unit tests and the production-build browser tests on every push to `main` and on pull requests.
 
 ## Project structure
 
 ```
 src/
-  main.tsx          page switching: landing (/), editor (/app), benchmark (/bench)
-  App.tsx           the editor layout
   components/       landing page, sidebar, SQL editor, results table, chart, AI bar
   db/engine.ts      DuckDB start-up, file loading, queries, export
-  state/            app state (zustand)
-  lib/              pure helpers, each with unit tests next to it
+  state/            app state
+  lib/              helpers, each with unit tests next to it
   bench/            the benchmark page
-  samples.ts        sample datasets and their example questions
 shared/ai.ts        the browser/Worker contract for AI requests
 worker/index.ts     Cloudflare Worker: POST /api/ai
-public/samples/     sample datasets as Parquet
 public/_headers     security headers, including the Content-Security-Policy
-scripts/            build the sample datasets, capture screenshots, record the demo GIF
-tests/e2e/          Playwright tests
+tests/e2e/          Playwright browser tests
 ```
 
-## Sample data and credits
+## Credits
 
-- **NYC taxi trips:** yellow taxi trip records for January 2024 and the taxi zone lookup table, from the [NYC Taxi & Limousine Commission](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page). Trimmed to nine columns to keep the file small; rebuilt with `npm run build:samples`.
-- **World CO₂ emissions:** [Our World in Data, CO₂ and Greenhouse Gas Emissions](https://github.com/owid/co2-data), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Countries only, 1850 onward.
-- **Fonts:** IBM Plex Sans, Mono and Serif, under the SIL Open Font License, bundled with the app.
+- **NYC taxi trips:** yellow taxi trip records for January 2024 and the taxi zone lookup table, from the [NYC Taxi & Limousine Commission](https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page).
+- **World CO₂ emissions:** [Our World in Data](https://github.com/owid/co2-data), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+- **Fonts:** IBM Plex Sans, Mono and Serif, under the SIL Open Font License.
 
 ## License
 
